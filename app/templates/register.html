@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Registrieren' if lang == 'de' else 'Sign up' }} – Garaly{% endblock %}
+{% block content %}
+<main>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <h1 class="hfont">{{ 'Konto erstellen' if lang == 'de' else 'Create your account' }}</h1>
+      <p class="sub2">{{ 'Werde Teil von Garaly.' if lang == 'de' else 'Join Garaly.' }}</p>
+
+      <div class="form-error" id="form-error"></div>
+
+      <form id="register-form">
+        <div class="field">
+          <label>{{ 'Name' if lang == 'de' else 'Name' }}</label>
+          <input type="text" id="name" required>
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="field">
+          <label>{{ 'Passwort' if lang == 'de' else 'Password' }} <span style="font-weight:400;color:var(--ink-muted);">({{ 'mind. 8 Zeichen' if lang == 'de' else 'min 8 characters' }})</span></label>
+          <input type="password" id="password" minlength="8" required>
+        </div>
+        <button type="submit" class="btn-primary">{{ 'Konto erstellen' if lang == 'de' else 'Create account' }}</button>
+      </form>
+
+      <div class="auth-switch">
+        {{ 'Schon ein Konto?' if lang == 'de' else 'Already have an account?' }}
+        <a href="/login?lang={{ lang }}">{{ t.login }}</a>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const LANG = "{{ lang }}";
+
+document.getElementById("register-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById("form-error");
+  errorEl.style.display = "none";
+
+  const res = await fetch("/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: document.getElementById("name").value,
+      email: document.getElementById("email").value,
+      password: document.getElementById("password").value,
+    }),
+  });
+
+  if (res.ok) {
+    window.location.href = "/?lang=" + LANG;
+  } else {
+    const data = await res.json().catch(() => ({}));
+    errorEl.textContent = data.detail || (LANG === "de" ? "Registrierung fehlgeschlagen." : "Registration failed.");
+    errorEl.style.display = "block";
+  }
+});
+</script>
+{% endblock %}

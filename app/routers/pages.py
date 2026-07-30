@@ -1,0 +1,95 @@
+from fastapi import APIRouter, Depends, Request
+from fastapi.responses import HTMLResponse
+from fastapi.templating import Jinja2Templates
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.auth import get_current_user_optional
+from app.database import get_db
+from app.models import Space, User
+from app.translations import CATEGORIES, get_translator
+
+router = APIRouter(tags=["pages"])
+templates = Jinja2Templates(directory="app/templates")
+
+
+def _lang_from_request(request: Request) -> str:
+    lang = request.query_params.get("lang") or request.cookies.get("garaly_lang") or "de"
+    return lang if lang in ("de", "en") else "de"
+
+
+async def _common_ctx(request: Request, db: AsyncSession, user: User | None) -> dict:
+    lang = _lang_from_request(request)
+    return {
+        "request": request,
+        "t": get_translator(lang),
+        "lang": lang,
+        "categories": CATEGORIES,
+        "user": user,
+    }
+
+
+@router.get("/", response_class=HTMLResponse)
+async def landing(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_current_user_optional),
+):
+    ctx = await _common_ctx(request, db, user)
+
+    total_spaces = (await db.execute(select(func.count()).select_from(Space).where(Space.is_active.is_(True)))).scalar_one()
+    total_cities = (await db.execute(select(func.count(func.distinct(Space.city))).where(Space.is_active.is_(True)))).scalar_one()
+
+    category_counts = {}
+    rows = await db.execute(
+        select(Space.category, func.count()).where(Space.is_active.is_(True)).group_by(Space.category)
+    )
+    for cat, count in rows.all():
+        category_counts[cat] = count
+
+    ctx.update(
+        total_spaces=total_spaces,
+        total_cities=total_cities,
+        category_counts=category_counts,
+    )
+    return templates.TemplateResponse(request, "landing.html", ctx)
+
+
+@router.get("/search", response_class=HTMLResponse)
+async def search(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_current_user_optional),
+):
+    ctx = await _common_ctx(request, db, user)
+    ctx.update(
+        city=request.query_params.get("city", ""),
+        active_category=request.query_params.get("category", "all"),
+    )
+    return templates.TemplateResponse(request, "search.html", ctx)
+
+
+@router.get("/listing/{space_id}", response_class=HTMLResponse)
+async def listing_detail(
+    space_id: str,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    user: User | None = Depends(get_current_user_optional),
+):
+    ctx = await _common_ctx(request, db, user)
+    space = await db.get(Space, space_id)
+    owner = await db.get(User, space.owner_id) if space else None
+    ctx.update(space=space, space_id=space_id, owner=owner)
+    return templates.TemplateResponse(request, "detail.html", ctx)
+
+
+@router.get("/login", response_class=HTMLResponse)
+async def login_page(request: Request, db: AsyncSession = Depends(get_db), user: User | None = Depends(get_current_user_optional)):
+    ctx = await _common_ctx(request, db, user)
+    return templates.TemplateResponse(request, "login.html", ctx)
+
+
+@router.get("/register", response_class=HTMLResponse)
+async def register_page(request: Request, db: AsyncSession = Depends(get_db), user: User | None = Depends(get_current_user_optional)):
+    ctx = await _common_ctx(request, db, user)
+    return templates.TemplateResponse(request, "register.html", ctx)

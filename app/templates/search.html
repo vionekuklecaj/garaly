@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}{{ t.searchTitleFor }} {{ city or '...' }} – Garaly{% endblock %}
+{% block content %}
+<main>
+  <div class="container">
+    <div class="breadcrumb"><a href="/?lang={{ lang }}">{{ t.breadcrumbHome }}</a> / {{ t.breadcrumbFind }}</div>
+    <h1 class="page-title hfont" id="page-title">{{ t.searchTitleFor }} {{ city if city else '' }}</h1>
+
+    <form class="search-bar" action="/search" method="get" style="margin-bottom:8px;">
+      <input type="hidden" name="lang" value="{{ lang }}">
+      <input type="hidden" name="category" id="category-input" value="{{ active_category }}">
+      <div style="flex:1;display:flex;align-items:center;gap:10px;padding:8px 14px;">
+        <input name="city" value="{{ city }}" placeholder="{{ t.heroSearchPh }}">
+      </div>
+      <button type="submit" class="btn-primary">{{ t.heroSearchBtn }}</button>
+    </form>
+
+    <div class="chip-row" id="chip-row">
+      <div class="chip {{ 'active' if active_category == 'all' }}" data-cat="all">{{ t.filterAll }}</div>
+      {% for c in categories %}
+      <div class="chip {{ 'active' if active_category == c.key }}" data-cat="{{ c.key }}">{{ c.icon }} {{ c[lang] }}</div>
+      {% endfor %}
+    </div>
+
+    <div class="results-row">
+      <span id="results-count">{{ t.resultsCount }}</span>
+      <span>{{ t.sortBy }}</span>
+    </div>
+
+    <div class="listing-grid" id="listing-grid"></div>
+    <div class="empty-state" id="empty-state" style="display:none;">
+      <p>{{ '0 ' + t.resultsCount }}</p>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const LANG = "{{ lang }}";
+const T = {
+  perMonth: "{{ t.perMonth }}",
+  reviews: "{{ t.reviews }}",
+  catLabels: {
+    {% for c in categories %}"{{ c.key }}": "{{ c[lang] }}"{{ "," if not loop.last }}{% endfor %}
+  }
+};
+
+let currentCity = {{ (city or '')|tojson }};
+let currentCategory = {{ (active_category or 'all')|tojson }};
+
+async function loadListings() {
+  const params = new URLSearchParams({ page_size: 24 });
+  if (currentCity) params.set("city", currentCity);
+  if (currentCategory && currentCategory !== "all") params.set("category", currentCategory);
+
+  const res = await fetch("/api/spaces?" + params.toString());
+  const data = await res.json();
+  renderListings(data.items, data.total);
+}
+
+function renderListings(items, total) {
+  const grid = document.getElementById("listing-grid");
+  const empty = document.getElementById("empty-state");
+  document.getElementById("results-count").textContent = total + " " + "{{ t.resultsCount }}";
+
+  if (!items.length) {
+    grid.innerHTML = "";
+    empty.style.display = "block";
+    return;
+  }
+  empty.style.display = "none";
+
+  grid.innerHTML = items.map(space => `
+    <div class="listing-card" onclick="location.href='/listing/${space.id}?lang=${LANG}'">
+      <div class="photo-wrap">
+        <div class="photo">${space.category.toUpperCase()} PHOTO</div>
+        <div class="badge-category">${T.catLabels[space.category] || space.category}</div>
+        <div class="badge-save" onclick="event.stopPropagation()">♡</div>
+      </div>
+      <div class="body">
+        <div class="title">${escapeHtml(space.title)}</div>
+        <div class="loc">${escapeHtml(space.city)}</div>
+        <div class="price-row">
+          <div class="price">${Number(space.price_month).toFixed(0)} € <span style="font-weight:400;color:var(--ink-muted);">/ ${T.perMonth}</span></div>
+          <div class="rating">★ 4.8</div>
+        </div>
+      </div>
+    </div>
+  `).join("");
+}
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+document.getElementById("chip-row").addEventListener("click", (e) => {
+  const chip = e.target.closest(".chip");
+  if (!chip) return;
+  document.querySelectorAll("#chip-row .chip").forEach(c => c.classList.remove("active"));
+  chip.classList.add("active");
+  currentCategory = chip.dataset.cat;
+  document.getElementById("category-input").value = currentCategory;
+  loadListings();
+});
+
+loadListings();
+</script>
+{% endblock %}

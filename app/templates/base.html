@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Garaly{% endblock %}</title>
+<link rel="icon" href="/static/images/garaly-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <a class="logo" href="/?lang={{ lang }}">
+    <img src="/static/images/garaly-icon.png" alt="Garaly">
+    <span class="hfont">Garaly</span>
+  </a>
+
+  <nav class="main-nav">
+    <a href="/search?lang={{ lang }}">{{ t.navFind }}</a>
+    <a href="#">{{ t.navList }}</a>
+    <a href="#">{{ t.navHow }}</a>
+    <a href="#">{{ t.navAbout }}</a>
+  </nav>
+
+  <div class="header-right">
+    <button class="lang-toggle" onclick="toggleLang()">
+      <span class="{{ 'off' if lang != 'de' }}">DE</span><span class="dim">/</span><span class="{{ 'off' if lang != 'en' }}">EN</span>
+    </button>
+    {% if user %}
+      <a href="#" onclick="logout(); return false;">{{ t.login if lang=='en' else 'Abmelden' }}</a>
+    {% else %}
+      <a href="/login?lang={{ lang }}">{{ t.login }}</a>
+    {% endif %}
+    <button class="btn-primary" onclick="location.href='/search?lang={{ lang }}'">{{ t.cta }}</button>
+  </div>
+</header>
+
+{% block content %}{% endblock %}
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <div class="logo" style="margin-bottom:12px;">
+          <img src="/static/images/garaly-icon.png" alt="Garaly" style="width:28px;height:28px;">
+          <span class="hfont" style="font-size:18px;">Garaly</span>
+        </div>
+        <p style="color:var(--ink-muted);font-size:14px;">{{ t.footerTagline }}</p>
+      </div>
+      <div class="footer-col">
+        <h4>{{ t.footerProduct }}</h4>
+        <a href="/search?lang={{ lang }}">{{ t.navFind }}</a>
+        <a href="#">{{ t.navList }}</a>
+        <a href="#">{{ t.navHow }}</a>
+      </div>
+      <div class="footer-col">
+        <h4>{{ t.footerCompany }}</h4>
+        <a href="#">{{ t.navAbout }}</a>
+      </div>
+      <div class="footer-col">
+        <h4>{{ t.footerLegal }}</h4>
+        <a href="#">Impressum</a>
+        <a href="#">Datenschutz</a>
+      </div>
+    </div>
+    <div class="footer-bar">© 2026 Garaly. {{ t.copyright }}</div>
+  </div>
+</footer>
+
+<script src="/static/js/main.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

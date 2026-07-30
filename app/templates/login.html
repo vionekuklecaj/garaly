@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ t.login }} – Garaly{% endblock %}
+{% block content %}
+<main>
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <h1 class="hfont">{{ t.login }}</h1>
+      <p class="sub2">{{ 'Willkommen zurück bei Garaly.' if lang == 'de' else 'Welcome back to Garaly.' }}</p>
+
+      <div class="form-error" id="form-error"></div>
+
+      <form id="login-form">
+        <div class="field">
+          <label>Email</label>
+          <input type="email" id="email" required>
+        </div>
+        <div class="field">
+          <label>{{ 'Passwort' if lang == 'de' else 'Password' }}</label>
+          <input type="password" id="password" required>
+        </div>
+        <button type="submit" class="btn-primary">{{ t.login }}</button>
+      </form>
+
+      <div class="auth-switch">
+        {{ 'Noch kein Konto?' if lang == 'de' else "Don't have an account?" }}
+        <a href="/register?lang={{ lang }}">{{ 'Registrieren' if lang == 'de' else 'Sign up' }}</a>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const LANG = "{{ lang }}";
+const params = new URLSearchParams(window.location.search);
+const next = params.get("next") || "/";
+
+document.getElementById("login-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById("form-error");
+  errorEl.style.display = "none";
+
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: document.getElementById("email").value,
+      password: document.getElementById("password").value,
+    }),
+  });
+
+  if (res.ok) {
+    window.location.href = next + (next.includes("?") ? "&" : "?") + "lang=" + LANG;
+  } else {
+    const data = await res.json().catch(() => ({}));
+    errorEl.textContent = data.detail || (LANG === "de" ? "Anmeldung fehlgeschlagen." : "Login failed.");
+    errorEl.style.display = "block";
+  }
+});
+</script>
+{% endblock %}

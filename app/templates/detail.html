@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}{{ space.title if space else 'Listing' }} – Garaly{% endblock %}
+{% block content %}
+<main>
+  <div class="container" style="padding-top:24px;">
+    {% if not space %}
+      <div class="empty-state"><p>{{ 'Anzeige nicht gefunden.' if lang == 'de' else 'Listing not found.' }}</p></div>
+    {% else %}
+    <div class="breadcrumb">
+      <a href="/?lang={{ lang }}">{{ t.breadcrumbHome }}</a> /
+      <a href="/search?lang={{ lang }}">{{ t.breadcrumbFind }}</a> /
+      {{ space.title }}
+    </div>
+
+    <div class="detail-header-row">
+      <div>
+        <h1 class="detail-title hfont">{{ space.title }}</h1>
+        <div class="detail-meta">{{ space.city }} · ★ 4.8 (32 {{ t.reviews }})</div>
+      </div>
+      <div class="detail-actions">
+        <button class="btn-secondary">{{ t.save }}</button>
+        <button class="btn-secondary">{{ t.share }}</button>
+      </div>
+    </div>
+
+    <div class="gallery">
+      <div class="main-photo">{{ space.category.upper() }} PHOTO</div>
+      <div class="sub-grid">
+        <div class="sub-photo">PHOTO 2</div>
+        <div class="sub-photo">PHOTO 3</div>
+        <div class="sub-photo">PHOTO 4</div>
+        <div class="sub-photo more" data-more="+3 more">PHOTO 5</div>
+      </div>
+    </div>
+
+    <div class="detail-body">
+      <div>
+        <div class="host-row">
+          <div class="avatar">{{ (owner.name[0] | upper) if owner else 'G' }}</div>
+          <div>
+            <div class="host-name">{{ t.hostedBy }} {{ owner.name if owner else 'Garaly Host' }}</div>
+            <div class="host-verified">{{ t.verifiedHost }}</div>
+          </div>
+        </div>
+
+        <p class="description">{{ space.description or ('Beschreibung folgt in Kürze.' if lang=='de' else 'Description coming soon.') }}</p>
+
+        <h3 class="hfont" style="margin-bottom:16px;">{{ t.amenities }}</h3>
+        <div class="amenities-grid">
+          <div class="amenity">💡 {{ t.amenity_lighting }}</div>
+          <div class="amenity">🔌 {{ t.amenity_electricity }}</div>
+          <div class="amenity">📹 {{ t.amenity_security }}</div>
+          <div class="amenity">🔑 {{ t.amenity_access }}</div>
+          <div class="amenity">☀️ {{ t.amenity_dry }}</div>
+          <div class="amenity">🚗 {{ t.amenity_parking }}</div>
+        </div>
+      </div>
+
+      <div class="booking-card">
+        <div class="booking-price">{{ space.price_month|int }} € <span class="unit">/ {{ t.perMonth }}</span></div>
+        <form id="booking-form">
+          <div class="field">
+            <label>{{ t.moveInDate }}</label>
+            <input type="date" id="move-in-date" required>
+          </div>
+          <div class="field">
+            <label>{{ t.duration }}</label>
+            <select id="duration">
+              <option value="1">1 {{ 'Monat' if lang=='de' else 'month' }}</option>
+              <option value="3" selected>3 {{ 'Monate' if lang=='de' else 'months' }}</option>
+              <option value="6">6 {{ 'Monate' if lang=='de' else 'months' }}</option>
+              <option value="12">12 {{ 'Monate' if lang=='de' else 'months' }}</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-primary" style="width:100%;">{{ t.sendRequest }}</button>
+          <div class="form-error" id="booking-error"></div>
+        </form>
+        <div class="booking-note">{{ t.noChargeYet }}</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const IS_LOGGED_IN = {{ 'true' if user else 'false' }};
+const SPACE_ID = {{ (space_id or '')|tojson }};
+const LANG = "{{ lang }}";
+
+const form = document.getElementById("booking-form");
+if (form) {
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const errorEl = document.getElementById("booking-error");
+    errorEl.style.display = "none";
+
+    if (!IS_LOGGED_IN) {
+      window.location.href = "/login?lang=" + LANG + "&next=/listing/" + SPACE_ID;
+      return;
+    }
+
+    const moveInDate = document.getElementById("move-in-date").value;
+    const duration = parseInt(document.getElementById("duration").value, 10);
+
+    const res = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ space_id: SPACE_ID, move_in_date: moveInDate, duration_months: duration }),
+    });
+
+    if (res.ok) {
+      form.innerHTML = "<p style='color:var(--green-deep);font-weight:600;'>" +
+        (LANG === "de" ? "Anfrage gesendet!" : "Request sent!") + "</p>";
+    } else {
+      const data = await res.json().catch(() => ({}));
+      errorEl.textContent = data.detail || (LANG === "de" ? "Etwas ist schiefgelaufen." : "Something went wrong.");
+      errorEl.style.display = "block";
+    }
+  });
+}
+</script>
+{% endblock %}
