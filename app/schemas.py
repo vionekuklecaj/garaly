@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, model_validator
 
 
 # ---------- Users / Auth ----------
@@ -47,6 +47,8 @@ class SpaceOut(BaseModel):
     category: str
     city: str
     address: str
+    latitude: float | None = None
+    longitude: float | None = None
     price_month: float
     size_sqm: float | None
     is_active: bool
@@ -58,7 +60,16 @@ class SpaceOut(BaseModel):
 class BookingCreate(BaseModel):
     space_id: str
     move_in_date: date
-    duration_months: int = Field(ge=1, le=60)
+    move_out_date: date
+    # Set when the renter wants a period different from what they searched
+    # for -- shown to the host, doesn't change move_in_date/move_out_date.
+    custom_period_note: str = Field(default="", max_length=500)
+
+    @model_validator(mode="after")
+    def check_date_order(self):
+        if self.move_out_date < self.move_in_date:
+            raise ValueError("move_out_date must be on or after move_in_date")
+        return self
 
 
 class BookingOut(BaseModel):
@@ -68,6 +79,7 @@ class BookingOut(BaseModel):
     space_id: str
     renter_id: str
     move_in_date: date
-    duration_months: int
+    move_out_date: date
+    custom_period_note: str
     status: str
     created_at: datetime

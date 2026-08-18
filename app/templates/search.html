@@ -6,13 +6,50 @@
     <div class="breadcrumb"><a href="/?lang={{ lang }}">{{ t.breadcrumbHome }}</a> / {{ t.breadcrumbFind }}</div>
     <h1 class="page-title hfont" id="page-title">{{ t.searchTitleFor }} {{ city if city else '' }}</h1>
 
-    <form class="search-bar" action="/search" method="get" style="margin-bottom:8px;">
+    <form class="search-bar-full reveal" action="/search" method="get" style="margin-bottom:8px;">
       <input type="hidden" name="lang" value="{{ lang }}">
-      <input type="hidden" name="category" id="category-input" value="{{ active_category }}">
-      <div style="flex:1;display:flex;align-items:center;gap:10px;padding:8px 14px;">
-        <input name="city" value="{{ city }}" placeholder="{{ t.heroSearchPh }}">
+
+      <div class="search-seg">
+        <label>{{ t.searchLocation }}</label>
+        <input name="city" value="{{ city }}" placeholder="{{ t.searchLocationPh }}">
       </div>
-      <button type="submit" class="btn-primary">{{ t.heroSearchBtn }}</button>
+
+      <div class="search-seg">
+        <label>{{ t.searchCategory }}</label>
+        <select name="category">
+          <option value="all" {{ 'selected' if active_category == 'all' }}>{{ t.searchCategoryAll }}</option>
+          {% for c in categories %}
+          <option value="{{ c.key }}" {{ 'selected' if active_category == c.key }}>{{ c[lang] }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="search-seg">
+        <label>{{ t.searchMoveIn }}</label>
+        <input type="date" name="move_in" value="{{ move_in }}">
+      </div>
+
+      <div class="search-seg">
+        <label>{{ t.searchMoveOut }}</label>
+        <input type="date" name="move_out" value="{{ move_out }}">
+      </div>
+
+      <div class="search-seg">
+        <label>{{ t.searchRadius }}</label>
+        <select name="radius">
+          <option value="" {{ 'selected' if not radius }}>{{ t.radiusAny }}</option>
+          <option value="5" {{ 'selected' if radius == '5' }}>5 {{ t.radiusKm }}</option>
+          <option value="10" {{ 'selected' if radius == '10' }}>10 {{ t.radiusKm }}</option>
+          <option value="25" {{ 'selected' if radius == '25' }}>25 {{ t.radiusKm }}</option>
+          <option value="50" {{ 'selected' if radius == '50' }}>50 {{ t.radiusKm }}</option>
+        </select>
+      </div>
+
+      <div class="search-seg-btn">
+        <button type="submit" class="btn-primary" aria-label="{{ t.heroSearchBtn }}">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><line x1="21" y1="21" x2="16.65" y2="16.65" stroke="currentColor" stroke-width="2"/></svg>
+        </button>
+      </div>
     </form>
 
     <div class="chip-row" id="chip-row">
@@ -48,11 +85,18 @@ const T = {
 
 let currentCity = {{ (city or '')|tojson }};
 let currentCategory = {{ (active_category or 'all')|tojson }};
+let currentMoveIn = {{ (move_in or '')|tojson }};
+let currentMoveOut = {{ (move_out or '')|tojson }};
+let currentRadius = {{ (radius or '')|tojson }};
 
 async function loadListings() {
   const params = new URLSearchParams({ page_size: 24 });
   if (currentCity) params.set("city", currentCity);
   if (currentCategory && currentCategory !== "all") params.set("category", currentCategory);
+  if (currentRadius) params.set("radius_km", currentRadius);
+  // move_in/move_out aren't applied to search filtering yet (see backend note
+  // in app/routers/spaces.py) -- they're carried through to prefill the
+  // booking form on the listing detail page.
 
   const res = await fetch("/api/spaces?" + params.toString());
   const data = await res.json();
@@ -72,7 +116,7 @@ function renderListings(items, total) {
   empty.style.display = "none";
 
   grid.innerHTML = items.map(space => `
-    <div class="listing-card" onclick="location.href='/listing/${space.id}?lang=${LANG}'">
+    <div class="listing-card" onclick="location.href='/listing/${space.id}?lang=${LANG}${currentMoveIn ? '&move_in=' + currentMoveIn : ''}${currentMoveOut ? '&move_out=' + currentMoveOut : ''}'">
       <div class="photo-wrap">
         <div class="photo">${space.category.toUpperCase()} PHOTO</div>
         <div class="badge-category">${T.catLabels[space.category] || space.category}</div>
@@ -102,7 +146,8 @@ document.getElementById("chip-row").addEventListener("click", (e) => {
   document.querySelectorAll("#chip-row .chip").forEach(c => c.classList.remove("active"));
   chip.classList.add("active");
   currentCategory = chip.dataset.cat;
-  document.getElementById("category-input").value = currentCategory;
+  const categorySelect = document.querySelector('select[name="category"]');
+  if (categorySelect) categorySelect.value = currentCategory;
   loadListings();
 });
 

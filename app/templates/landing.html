@@ -55,25 +55,27 @@
     </div>
   </section>
 
-  <section class="section">
+  <section class="section reveal">
     <div class="container">
       <h2 class="hfont">{{ t.categoriesTitle }}</h2>
-      <div class="category-grid">
-        {% for c in categories %}
-        <a class="category-card" href="/search?category={{ c.key }}&lang={{ lang }}" style="display:block;">
-          <div class="category-icon">{{ c.icon }}</div>
-          <div class="name">{{ c[lang] }}</div>
-          <div class="count">{{ category_counts.get(c.key, 0) }} {{ t.listings }}</div>
-        </a>
-        {% endfor %}
+      <div class="category-carousel-wrap">
+        <div class="category-carousel" id="category-carousel">
+          {% for c in categories %}
+          <a class="category-card" href="/search?category={{ c.key }}&lang={{ lang }}">
+            <div class="category-icon">{{ c.icon }}</div>
+            <div class="name">{{ c[lang] }}</div>
+            <div class="desc">{{ t[c.desc_key] }}</div>
+          </a>
+          {% endfor %}
+        </div>
       </div>
     </div>
   </section>
 
-  <section class="section section-divider">
+  <section class="section section-divider reveal">
     <div class="container">
       <h2 class="hfont">{{ t.howTitle }}</h2>
-      <div class="steps-grid">
+      <div class="steps-grid reveal-stagger">
         <div class="step"><div class="num">1</div><div class="title">{{ t.howStep1Title }}</div><div class="sub">{{ t.howStep1Sub }}</div></div>
         <div class="step"><div class="num">2</div><div class="title">{{ t.howStep2Title }}</div><div class="sub">{{ t.howStep2Sub }}</div></div>
         <div class="step"><div class="num">3</div><div class="title">{{ t.howStep3Title }}</div><div class="sub">{{ t.howStep3Sub }}</div></div>
@@ -82,7 +84,7 @@
     </div>
   </section>
 
-  <section class="section section-divider">
+  <section class="section section-divider reveal">
     <div class="container trust-grid">
       <div>
         <h2 class="hfont">{{ t.trustTitle }}</h2>
@@ -101,7 +103,7 @@
     </div>
   </section>
 
-  <section class="section">
+  <section class="section reveal">
     <div class="container">
       <div class="cta-band" style="max-width:900px;">
         <h2 class="hfont">{{ t.ctaTitle }}</h2>

@@ -9,16 +9,16 @@ from app.database import AsyncSessionLocal, Base, engine
 from app.models import Space, User
 
 DEMO_SPACES = [
-    ("Doppelgarage in Schwabing", "garages", "München", 120, 18),
-    ("Trockener Lagerraum Zentrum", "storage", "Berlin", 65, 8),
-    ("Stellplatz nahe Hauptbahnhof", "parking", "Frankfurt", 45, 12),
-    ("Helle Lagerhalle am Stadtrand", "halls", "Hamburg", 340, 120),
-    ("Kellerabteil, trocken & sicher", "cellars", "Köln", 35, 6),
-    ("Umzäunte Außenfläche", "outdoor", "Stuttgart", 80, 40),
-    ("Einzelgarage ruhige Lage", "garages", "München", 95, 15),
-    ("Lagerraum mit Regalsystem", "storage", "München", 70, 10),
-    ("Tiefgaragenstellplatz", "parking", "Berlin", 55, 12),
-    ("Lagerhalle mit Rampe", "halls", "Leipzig", 410, 150),
+    ("Doppelgarage in Schwabing", "garages", "München", "Leopoldstraße 45, München", 120, 18),
+    ("Trockener Lagerraum Zentrum", "storage", "Berlin", "Alexanderplatz 3, Berlin", 65, 8),
+    ("Stellplatz nahe Hauptbahnhof", "parking", "Frankfurt", "Poststraße 12, Frankfurt", 45, 12),
+    ("Helle Lagerhalle am Stadtrand", "halls", "Hamburg", "Industriestraße 8, Hamburg", 340, 120),
+    ("Kellerabteil, trocken & sicher", "storage", "Köln", "Ringstraße 20, Köln", 35, 6),
+    ("Umzäunte Außenfläche", "outdoor", "Stuttgart", "Am Feld 5, Stuttgart", 80, 40),
+    ("Einzelgarage ruhige Lage", "garages", "München", "Sendlinger Straße 30, München", 95, 15),
+    ("Lagerraum mit Regalsystem", "storage", "München", "Dachauer Straße 88, München", 70, 10),
+    ("Tiefgaragenstellplatz", "parking", "Berlin", "Friedrichstraße 100, Berlin", 55, 12),
+    ("Lagerhalle mit Rampe", "halls", "Leipzig", "Gewerbering 15, Leipzig", 410, 150),
 ]
 
 
@@ -39,7 +39,7 @@ async def main():
             db.add(host)
             await db.flush()
 
-            for title, category, city, price, size in DEMO_SPACES:
+            for title, category, city, address, price, size in DEMO_SPACES:
                 db.add(
                     Space(
                         owner_id=host.id,
@@ -47,6 +47,7 @@ async def main():
                         description="",
                         category=category,
                         city=city,
+                        address=address,
                         price_month=price,
                         size_sqm=size,
                     )

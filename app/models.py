@@ -6,7 +6,6 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
-    Integer,
     Numeric,
     String,
     Text,
@@ -65,9 +64,13 @@ class Space(Base):
     owner_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True, nullable=False)
     title: Mapped[str] = mapped_column(String(160), nullable=False)
     description: Mapped[str] = mapped_column(Text, default="")
-    category: Mapped[str] = mapped_column(String(40), index=True, nullable=False)  # garage/storage/parking/hall/cellar/outdoor
+    category: Mapped[str] = mapped_column(String(40), index=True, nullable=False)  # garage/storage/parking/hall/outdoor
     city: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
     address: Mapped[str] = mapped_column(String(255), default="")
+    # Not yet populated -- set these via a geocoding API (e.g. Google Geocoding)
+    # when an address is saved, to enable real "within N km" radius search.
+    latitude: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
+    longitude: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
     price_month: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     size_sqm: Mapped[float | None] = mapped_column(Numeric(8, 2), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -83,8 +86,13 @@ class Booking(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
     space_id: Mapped[str] = mapped_column(String(36), ForeignKey("spaces.id"), index=True, nullable=False)
     renter_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True, nullable=False)
+    # Free date range rather than a preset duration -- supports single-day
+    # bookings as well as long-term rentals.
     move_in_date: Mapped[date] = mapped_column(Date, nullable=False)
-    duration_months: Mapped[int] = mapped_column(Integer, nullable=False)
+    move_out_date: Mapped[date] = mapped_column(Date, nullable=False)
+    # Optional free-text note when the renter wants a period different from
+    # what they searched for -- host sees it and can agree out of band.
+    custom_period_note: Mapped[str] = mapped_column(Text, default="")
     status: Mapped[str] = mapped_column(String(20), default="pending")  # pending/accepted/declined/cancelled
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
 

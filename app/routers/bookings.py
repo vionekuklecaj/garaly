@@ -26,7 +26,8 @@ async def create_booking(
         space_id=data.space_id,
         renter_id=user.id,
         move_in_date=data.move_in_date,
-        duration_months=data.duration_months,
+        move_out_date=data.move_out_date,
+        custom_period_note=data.custom_period_note,
     )
     db.add(booking)
     await db.commit()

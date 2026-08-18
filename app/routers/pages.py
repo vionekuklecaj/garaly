@@ -40,17 +40,9 @@ async def landing(
     total_spaces = (await db.execute(select(func.count()).select_from(Space).where(Space.is_active.is_(True)))).scalar_one()
     total_cities = (await db.execute(select(func.count(func.distinct(Space.city))).where(Space.is_active.is_(True)))).scalar_one()
 
-    category_counts = {}
-    rows = await db.execute(
-        select(Space.category, func.count()).where(Space.is_active.is_(True)).group_by(Space.category)
-    )
-    for cat, count in rows.all():
-        category_counts[cat] = count
-
     ctx.update(
         total_spaces=total_spaces,
         total_cities=total_cities,
-        category_counts=category_counts,
     )
     return templates.TemplateResponse(request, "landing.html", ctx)
 
@@ -65,6 +57,9 @@ async def search(
     ctx.update(
         city=request.query_params.get("city", ""),
         active_category=request.query_params.get("category", "all"),
+        move_in=request.query_params.get("move_in", ""),
+        move_out=request.query_params.get("move_out", ""),
+        radius=request.query_params.get("radius", ""),
     )
     return templates.TemplateResponse(request, "search.html", ctx)
 
@@ -79,7 +74,13 @@ async def listing_detail(
     ctx = await _common_ctx(request, db, user)
     space = await db.get(Space, space_id)
     owner = await db.get(User, space.owner_id) if space else None
-    ctx.update(space=space, space_id=space_id, owner=owner)
+    ctx.update(
+        space=space,
+        space_id=space_id,
+        owner=owner,
+        move_in=request.query_params.get("move_in", ""),
+        move_out=request.query_params.get("move_out", ""),
+    )
     return templates.TemplateResponse(request, "detail.html", ctx)
 
 

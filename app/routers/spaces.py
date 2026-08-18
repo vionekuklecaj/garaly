@@ -9,19 +9,27 @@ from app.schemas import SpaceCreate, SpaceOut
 
 router = APIRouter(prefix="/api/spaces", tags=["spaces"])
 
-VALID_CATEGORIES = {"garages", "storage", "parking", "halls", "cellars", "outdoor"}
+VALID_CATEGORIES = {"garages", "storage", "parking", "halls", "outdoor"}
 
 
 @router.get("", response_model=dict)
 async def list_spaces(
     city: str | None = Query(default=None),
     category: str | None = Query(default=None),
+    radius_km: int | None = Query(default=None),
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=50),
     db: AsyncSession = Depends(get_db),
 ):
     """List/search active spaces. Paginated -- never returns unbounded rows,
-    which matters once there are thousands of listings."""
+    which matters once there are thousands of listings.
+
+    `radius_km` is accepted but not yet applied: true "within N km" search
+    needs a lat/lng per listing (via a geocoding API), which Space doesn't
+    have yet. Once `Space.latitude`/`Space.longitude` are populated, this is
+    where a bounding-box + haversine distance filter would go. For now,
+    matching is by city name only.
+    """
     stmt = select(Space).where(Space.is_active.is_(True))
     count_stmt = select(func.count()).select_from(Space).where(Space.is_active.is_(True))
 
