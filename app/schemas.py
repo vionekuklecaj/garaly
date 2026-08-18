@@ -83,3 +83,22 @@ class BookingOut(BaseModel):
     custom_period_note: str
     status: str
     created_at: datetime
+
+
+class BookingStatusUpdate(BaseModel):
+    status: str = Field(pattern="^(accepted|declined)$")
+
+
+class BookingDetailOut(BookingOut):
+    """BookingOut plus the bits of space/renter info the dashboards need to
+    render a useful list without extra round trips per row."""
+    space_title: str
+    space_city: str
+    renter_name: str | None = None
+    renter_email: str | None = None
+
+
+# ---------- Availability ----------
+
+class AvailabilityOut(BaseModel):
+    available: bool

@@ -69,23 +69,16 @@
       <div class="booking-card reveal">
         <div class="booking-price">{{ space.price_month|int }} € <span class="unit">/ {{ t.perMonth }}</span></div>
         <form id="booking-form">
-          {% if move_in and move_out %}
-            <div class="field" style="background:var(--green-soft);border-radius:10px;padding:10px 12px;">
-              <label style="margin-bottom:2px;">{{ t.searchMoveIn }} – {{ t.searchMoveOut }}</label>
-              <div style="font-weight:600;font-size:14px;">{{ move_in }} → {{ move_out }}</div>
-            </div>
-            <input type="hidden" id="move-in-date" value="{{ move_in }}">
-            <input type="hidden" id="move-out-date" value="{{ move_out }}">
-          {% else %}
-            <div class="field">
-              <label>{{ t.searchMoveIn }}</label>
-              <input type="date" id="move-in-date" required>
-            </div>
-            <div class="field">
-              <label>{{ t.searchMoveOut }}</label>
-              <input type="date" id="move-out-date" required>
-            </div>
-          {% endif %}
+          <div class="field">
+            <label>{{ t.searchMoveIn }}</label>
+            <input type="date" id="move-in-date" value="{{ move_in }}" required>
+          </div>
+          <div class="field">
+            <label>{{ t.searchMoveOut }}</label>
+            <input type="date" id="move-out-date" value="{{ move_out }}" required>
+          </div>
+
+          <div id="availability-status" class="availability-status"></div>
 
           <div class="field">
             <label style="display:flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;">
@@ -95,7 +88,7 @@
             <textarea id="custom-period-note" rows="2" style="display:none;width:100%;margin-top:8px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;font-family:inherit;font-size:13.5px;" placeholder="{{ t.requestCustomPeriod }}..."></textarea>
           </div>
 
-          <button type="submit" class="btn-primary" style="width:100%;">{{ t.sendRequest }}</button>
+          <button type="submit" class="btn-primary" id="booking-submit" style="width:100%;">{{ t.sendRequest }}</button>
           <div class="form-error" id="booking-error"></div>
         </form>
         <div class="booking-note">{{ t.noChargeYet }}</div>
@@ -111,8 +104,70 @@
 const IS_LOGGED_IN = {{ 'true' if user else 'false' }};
 const SPACE_ID = {{ (space_id or '')|tojson }};
 const LANG = "{{ lang }}";
+const T_CHECKING = {{ t.checkingAvailability|tojson }};
+const T_AVAILABLE = {{ t.availableDates|tojson }};
+const T_UNAVAILABLE = {{ t.notAvailableDates|tojson }};
 
 const form = document.getElementById("booking-form");
+const moveInInput = document.getElementById("move-in-date");
+const moveOutInput = document.getElementById("move-out-date");
+const statusEl = document.getElementById("availability-status");
+const submitBtn = document.getElementById("booking-submit");
+
+let isAvailable = null; // null = unknown/not yet checked, true/false once checked
+let checkToken = 0;
+
+function setStatus(state, text) {
+  if (!statusEl) return;
+  statusEl.className = "availability-status" + (state ? " " + state : "");
+  statusEl.textContent = text || "";
+}
+
+async function checkAvailability() {
+  const moveIn = moveInInput.value;
+  const moveOut = moveOutInput.value;
+  isAvailable = null;
+
+  if (!moveIn || !moveOut) {
+    setStatus("", "");
+    return;
+  }
+  if (moveOut < moveIn) {
+    setStatus("unavailable", LANG === "de" ? "Auszug muss nach Einzug liegen." : "Move-out must be after move-in.");
+    return;
+  }
+
+  const myToken = ++checkToken;
+  setStatus("checking", T_CHECKING);
+
+  try {
+    const params = new URLSearchParams({ move_in: moveIn, move_out: moveOut });
+    const res = await fetch(`/api/spaces/${SPACE_ID}/availability?` + params.toString());
+    if (myToken !== checkToken) return; // a newer check superseded this one
+    if (!res.ok) {
+      setStatus("", "");
+      return;
+    }
+    const data = await res.json();
+    isAvailable = data.available;
+    setStatus(data.available ? "available" : "unavailable", data.available ? T_AVAILABLE : T_UNAVAILABLE);
+  } catch {
+    if (myToken !== checkToken) return;
+    setStatus("", "");
+  }
+}
+
+let debounceHandle;
+function onDatesChanged() {
+  clearTimeout(debounceHandle);
+  debounceHandle = setTimeout(checkAvailability, 300);
+}
+if (moveInInput && moveOutInput) {
+  moveInInput.addEventListener("change", onDatesChanged);
+  moveOutInput.addEventListener("change", onDatesChanged);
+  // Check immediately if dates were prefilled from search.
+  if (moveInInput.value && moveOutInput.value) checkAvailability();
+}
 
 const customToggle = document.getElementById("custom-period-toggle");
 const customNote = document.getElementById("custom-period-note");
@@ -129,12 +184,33 @@ if (form) {
     errorEl.style.display = "none";
 
     if (!IS_LOGGED_IN) {
-      window.location.href = "/login?lang=" + LANG + "&next=/listing/" + SPACE_ID;
+      const params = new URLSearchParams({ lang: LANG, next: "/listing/" + SPACE_ID });
+      window.location.href = "/login?" + params.toString();
       return;
     }
 
-    const moveInDate = document.getElementById("move-in-date").value;
-    const moveOutDate = document.getElementById("move-out-date").value;
+    const moveInDate = moveInInput.value;
+    const moveOutDate = moveOutInput.value;
+
+    if (isAvailable === false) {
+      errorEl.textContent = T_UNAVAILABLE;
+      errorEl.style.display = "block";
+      return;
+    }
+    // If availability hasn't been confirmed yet (e.g. user typed a date and
+    // hit submit before the debounced check ran), verify right now rather
+    // than trusting the client -- the server re-checks anyway, but this
+    // avoids a pointless request that's about to 409.
+    if (isAvailable === null && moveInDate && moveOutDate) {
+      await checkAvailability();
+      if (isAvailable === false) {
+        errorEl.textContent = T_UNAVAILABLE;
+        errorEl.style.display = "block";
+        return;
+      }
+    }
+
+    submitBtn.disabled = true;
     const note = (customToggle && customToggle.checked && customNote) ? customNote.value : "";
 
     const res = await fetch("/api/bookings", {
@@ -152,6 +228,7 @@ if (form) {
       form.innerHTML = "<p style='color:var(--green-deep);font-weight:600;'>" +
         (LANG === "de" ? "Anfrage gesendet!" : "Request sent!") + "</p>";
     } else {
+      submitBtn.disabled = false;
       const data = await res.json().catch(() => ({}));
       errorEl.textContent = data.detail || (LANG === "de" ? "Etwas ist schiefgelaufen." : "Something went wrong.");
       errorEl.style.display = "block";

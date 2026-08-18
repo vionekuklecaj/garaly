@@ -1,11 +1,14 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
+from app.availability import has_conflicting_booking
 from app.database import get_db
 from app.models import Space, User
-from app.schemas import SpaceCreate, SpaceOut
+from app.schemas import AvailabilityOut, SpaceCreate, SpaceOut
 
 router = APIRouter(prefix="/api/spaces", tags=["spaces"])
 
@@ -55,12 +58,41 @@ async def list_spaces(
     }
 
 
+@router.get("/mine", response_model=list[SpaceOut])
+async def my_spaces(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """The current user's own listings, including inactive ones -- powers the
+    host dashboard. Must be declared before /{space_id} so "mine" isn't
+    parsed as a space id."""
+    result = await db.execute(
+        select(Space).where(Space.owner_id == user.id).order_by(Space.created_at.desc())
+    )
+    return result.scalars().all()
+
+
 @router.get("/{space_id}", response_model=SpaceOut)
 async def get_space(space_id: str, db: AsyncSession = Depends(get_db)):
     space = await db.get(Space, space_id)
     if space is None or not space.is_active:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Space not found")
     return space
+
+
+@router.get("/{space_id}/availability", response_model=AvailabilityOut)
+async def check_availability(
+    space_id: str,
+    move_in: date = Query(...),
+    move_out: date = Query(...),
+    db: AsyncSession = Depends(get_db),
+):
+    if move_out < move_in:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="move_out must be on or after move_in")
+
+    space = await db.get(Space, space_id)
+    if space is None or not space.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Space not found")
+
+    conflict = await has_conflicting_booking(db, space_id, move_in, move_out)
+    return AvailabilityOut(available=not conflict)
 
 
 @router.post("", response_model=SpaceOut, status_code=status.HTTP_201_CREATED)

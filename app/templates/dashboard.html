@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% block title %}{{ t.dashboardTitle }} – Garaly{% endblock %}
+{% block content %}
+<main>
+  <div class="container" style="padding-top:24px;padding-bottom:64px;">
+    <h1 class="page-title hfont">{{ t.dashboardTitle }}</h1>
+    <p style="color:var(--ink-muted);margin:-12px 0 32px;">{{ t.dashboardSub }}</p>
+
+    {% if not user %}
+      <div class="empty-state"><p>{{ t.loginToList }}</p></div>
+    {% else %}
+
+    <div class="dash-section">
+      <h2 class="hfont">{{ t.dashboardTitle }}</h2>
+      <div id="listings-box"><p style="color:var(--ink-muted);">…</p></div>
+    </div>
+
+    <div class="dash-section">
+      <h2 class="hfont">{{ t.incomingRequests }}</h2>
+      <div id="requests-box"><p style="color:var(--ink-muted);">…</p></div>
+    </div>
+
+    {% endif %}
+  </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const LANG = "{{ lang }}";
+const T = {
+  noListingsYet: {{ t.noListingsYet|tojson }},
+  addListing: {{ t.addListing|tojson }},
+  noRequestsYet: {{ t.noRequestsYet|tojson }},
+  statusPending: {{ t.statusPending|tojson }},
+  statusAccepted: {{ t.statusAccepted|tojson }},
+  statusDeclined: {{ t.statusDeclined|tojson }},
+  accept: {{ t.accept|tojson }},
+  decline: {{ t.decline|tojson }},
+  perMonth: {{ t.perMonth|tojson }},
+};
+
+function escapeHtml(str) {
+  const div = document.createElement("div");
+  div.textContent = str == null ? "" : str;
+  return div.innerHTML;
+}
+
+function statusLabel(status) {
+  if (status === "accepted") return T.statusAccepted;
+  if (status === "declined") return T.statusDeclined;
+  return T.statusPending;
+}
+
+async function loadListings() {
+  const box = document.getElementById("listings-box");
+  const res = await fetch("/api/spaces/mine");
+  if (!res.ok) { box.innerHTML = ""; return; }
+  const listings = await res.json();
+
+  if (!listings.length) {
+    box.innerHTML = `<div class="empty-state" style="padding:32px 0;">
+      <p>${T.noListingsYet}</p>
+      <button class="btn-primary" style="margin-top:12px;" onclick="location.href='/list-space?lang=${LANG}'">${T.addListing}</button>
+    </div>`;
+    return;
+  }
+
+  box.innerHTML = listings.map(s => `
+    <a class="dash-listing-row" href="/listing/${s.id}?lang=${LANG}" style="display:flex;">
+      <div class="thumb"></div>
+      <div class="info">
+        <div class="title">${escapeHtml(s.title)}</div>
+        <div class="meta">${escapeHtml(s.city)} · ${Number(s.price_month).toFixed(0)} € / ${T.perMonth}</div>
+      </div>
+      ${s.is_active ? "" : '<span class="status-badge declined">inactive</span>'}
+    </a>
+  `).join("");
+}
+
+async function loadRequests() {
+  const box = document.getElementById("requests-box");
+  const res = await fetch("/api/bookings/received");
+  if (!res.ok) { box.innerHTML = ""; return; }
+  const bookings = await res.json();
+
+  if (!bookings.length) {
+    box.innerHTML = `<div class="empty-state" style="padding:32px 0;"><p>${T.noRequestsYet}</p></div>`;
+    return;
+  }
+
+  box.innerHTML = bookings.map(b => `
+    <div class="request-card" data-id="${b.id}">
+      <div class="row1">
+        <div>
+          <div class="title">${escapeHtml(b.space_title)} · ${escapeHtml(b.space_city)}</div>
+          <div class="meta">${escapeHtml(b.renter_name)} (${escapeHtml(b.renter_email)})</div>
+          <div class="meta">${b.move_in_date} → ${b.move_out_date}</div>
+        </div>
+        <span class="status-badge ${b.status}">${statusLabel(b.status)}</span>
+      </div>
+      ${b.custom_period_note ? `<div class="note">${escapeHtml(b.custom_period_note)}</div>` : ""}
+      ${b.status === "pending" ? `
+        <div class="actions">
+          <button class="btn-decline" onclick="updateBooking('${b.id}', 'declined')">${T.decline}</button>
+          <button class="btn-accept" onclick="updateBooking('${b.id}', 'accepted')">${T.accept}</button>
+        </div>` : ""}
+    </div>
+  `).join("");
+}
+
+async function updateBooking(bookingId, status) {
+  const res = await fetch(`/api/bookings/${bookingId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status }),
+  });
+  if (res.ok) {
+    loadRequests();
+  } else {
+    const data = await res.json().catch(() => ({}));
+    alert(data.detail || (LANG === "de" ? "Etwas ist schiefgelaufen." : "Something went wrong."));
+  }
+}
+
+{% if user %}
+loadListings();
+loadRequests();
+{% endif %}
+</script>
+{% endblock %}

@@ -19,9 +19,12 @@
 
   <nav class="main-nav">
     <a href="/search?lang={{ lang }}">{{ t.navFind }}</a>
-    <a href="#">{{ t.navList }}</a>
-    <a href="#">{{ t.navHow }}</a>
-    <a href="#">{{ t.navAbout }}</a>
+    <a href="/list-space?lang={{ lang }}">{{ t.navList }}</a>
+    <a href="/?lang={{ lang }}#how-it-works">{{ t.navHow }}</a>
+    {% if user %}
+    <a href="/my-bookings?lang={{ lang }}">{{ t.navMyBookings }}</a>
+    <a href="/dashboard?lang={{ lang }}">{{ t.navDashboard }}</a>
+    {% endif %}
   </nav>
 
   <div class="header-right">
@@ -33,7 +36,7 @@
     {% else %}
       <a href="/login?lang={{ lang }}">{{ t.login }}</a>
     {% endif %}
-    <button class="btn-primary" onclick="location.href='/search?lang={{ lang }}'">{{ t.cta }}</button>
+    <button class="btn-primary" onclick="location.href='/list-space?lang={{ lang }}'">{{ t.cta }}</button>
   </div>
 </header>
 
@@ -52,12 +55,12 @@
       <div class="footer-col">
         <h4>{{ t.footerProduct }}</h4>
         <a href="/search?lang={{ lang }}">{{ t.navFind }}</a>
-        <a href="#">{{ t.navList }}</a>
-        <a href="#">{{ t.navHow }}</a>
+        <a href="/list-space?lang={{ lang }}">{{ t.navList }}</a>
+        <a href="/?lang={{ lang }}#how-it-works">{{ t.navHow }}</a>
       </div>
       <div class="footer-col">
         <h4>{{ t.footerCompany }}</h4>
-        <a href="#">{{ t.navAbout }}</a>
+        <a href="/?lang={{ lang }}">{{ t.breadcrumbHome }}</a>
       </div>
       <div class="footer-col">
         <h4>{{ t.footerLegal }}</h4>

@@ -94,3 +94,21 @@ async def login_page(request: Request, db: AsyncSession = Depends(get_db), user:
 async def register_page(request: Request, db: AsyncSession = Depends(get_db), user: User | None = Depends(get_current_user_optional)):
     ctx = await _common_ctx(request, db, user)
     return templates.TemplateResponse(request, "register.html", ctx)
+
+
+@router.get("/list-space", response_class=HTMLResponse)
+async def list_space_page(request: Request, db: AsyncSession = Depends(get_db), user: User | None = Depends(get_current_user_optional)):
+    ctx = await _common_ctx(request, db, user)
+    return templates.TemplateResponse(request, "list_space.html", ctx)
+
+
+@router.get("/dashboard", response_class=HTMLResponse)
+async def dashboard_page(request: Request, db: AsyncSession = Depends(get_db), user: User | None = Depends(get_current_user_optional)):
+    ctx = await _common_ctx(request, db, user)
+    return templates.TemplateResponse(request, "dashboard.html", ctx)
+
+
+@router.get("/my-bookings", response_class=HTMLResponse)
+async def my_bookings_page(request: Request, db: AsyncSession = Depends(get_db), user: User | None = Depends(get_current_user_optional)):
+    ctx = await _common_ctx(request, db, user)
+    return templates.TemplateResponse(request, "my_bookings.html", ctx)
