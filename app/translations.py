@@ -83,7 +83,7 @@ TRANSLATIONS = {
         "requestedFrom": "Angefragt am",
         "aboutTitle": "Über uns",
         "aboutSub": "Das Team hinter Garaly.",
-        "aboutIntro": "Garaly ist ein Produkt von Nuvora. Wir glauben, dass ungenutzter Raum – Garagen, Keller, Lagerflächen – für alle einen Wert schaffen kann, wenn man ihn einfach zugänglich macht.",
+        "aboutIntro": "Wir glauben, dass ungenutzter Raum – Garagen, Keller, Lagerflächen – für alle einen Wert schaffen kann, wenn man ihn einfach zugänglich macht.",
         "howTitle": "So funktioniert's",
         "howStep1Title": "Suchen",
         "howStep1Sub": "Finde freien Raum in deiner Nähe.",
@@ -217,7 +217,7 @@ TRANSLATIONS = {
         "requestedFrom": "Requested",
         "aboutTitle": "About us",
         "aboutSub": "The team behind Garaly.",
-        "aboutIntro": "Garaly is a product by Nuvora. We believe unused space – garages, cellars, storage rooms – can create value for everyone once it's made simple to access.",
+        "aboutIntro": "We believe unused space – garages, cellars, storage rooms – can create value for everyone once it's made simple to access.",
         "howTitle": "How it works",
         "howStep1Title": "Search",
         "howStep1Sub": "Find free space near you.",
@@ -282,8 +282,8 @@ TEAM = [
         "name": {"de": "Alban Kuklecaj", "en": "Alban Kuklecaj"},
         "role": {"de": "Gründer & Geschäftsführer", "en": "Founder & CEO"},
         "bio": {
-            "de": "Verantwortlich für die Vision von Nuvora, die Unternehmensstrategie, Geschäftsentwicklung und den langfristigen Aufbau des Unternehmens.",
-            "en": "Responsible for Nuvora's vision, corporate strategy, business development, and the company's long-term growth.",
+            "de": "Verantwortlich für die Vision von Garaly, die Unternehmensstrategie, Geschäftsentwicklung und den langfristigen Aufbau des Unternehmens.",
+            "en": "Responsible for Garaly's vision, corporate strategy, business development, and the company's long-term growth.",
         },
     },
     {
@@ -295,7 +295,7 @@ TEAM = [
         },
     },
     {
-        "name": {"de": "Vionë Kuklecaj", "en": "Viona Kuklecaj"},
+        "name": {"de": "Vionë Kuklecaj", "en": "Vionë Kuklecaj"},
         "role": {"de": "Cybersecurity & IT", "en": "Cybersecurity & IT"},
         "bio": {
             "de": "Verantwortlich für die technische Entwicklung der Plattform, IT-Infrastruktur, Cybersicherheit sowie Website und App.",
