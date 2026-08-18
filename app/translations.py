@@ -81,6 +81,9 @@ TRANSLATIONS = {
         "noBookingsYet": "Du hast noch keine Anfragen gesendet.",
         "findASpace": "Raum finden",
         "requestedFrom": "Angefragt am",
+        "aboutTitle": "Über uns",
+        "aboutSub": "Das Team hinter Garaly.",
+        "aboutIntro": "Garaly ist ein Produkt von Nuvora. Wir glauben, dass ungenutzter Raum – Garagen, Keller, Lagerflächen – für alle einen Wert schaffen kann, wenn man ihn einfach zugänglich macht.",
         "howTitle": "So funktioniert's",
         "howStep1Title": "Suchen",
         "howStep1Sub": "Finde freien Raum in deiner Nähe.",
@@ -212,6 +215,9 @@ TRANSLATIONS = {
         "noBookingsYet": "You haven't sent any requests yet.",
         "findASpace": "Find a space",
         "requestedFrom": "Requested",
+        "aboutTitle": "About us",
+        "aboutSub": "The team behind Garaly.",
+        "aboutIntro": "Garaly is a product by Nuvora. We believe unused space – garages, cellars, storage rooms – can create value for everyone once it's made simple to access.",
         "howTitle": "How it works",
         "howStep1Title": "Search",
         "howStep1Sub": "Find free space near you.",
@@ -269,6 +275,33 @@ CATEGORIES = [
     {"key": "parking", "icon": "🅿️", "de": "Stellplätze", "en": "Parking spots", "desc_key": "catParkingDesc"},
     {"key": "halls", "icon": "🏭", "de": "Hallen", "en": "Halls", "desc_key": "catHallsDesc"},
     {"key": "outdoor", "icon": "🌳", "de": "Außenflächen", "en": "Outdoor areas", "desc_key": "catOutdoorDesc"},
+]
+
+TEAM = [
+    {
+        "name": {"de": "Alban Kuklecaj", "en": "Alban Kuklecaj"},
+        "role": {"de": "Gründer & Geschäftsführer", "en": "Founder & CEO"},
+        "bio": {
+            "de": "Verantwortlich für die Vision von Nuvora, die Unternehmensstrategie, Geschäftsentwicklung und den langfristigen Aufbau des Unternehmens.",
+            "en": "Responsible for Nuvora's vision, corporate strategy, business development, and the company's long-term growth.",
+        },
+    },
+    {
+        "name": {"de": "Albin Elshani", "en": "Albin Elshani"},
+        "role": {"de": "Geschäftsführer | Vertrieb & Partnerschaften", "en": "CEO | Sales & Partnerships"},
+        "bio": {
+            "de": "Verantwortlich für Vertrieb, Kundenakquise, Partnerschaften sowie den operativen Ausbau des Netzwerks.",
+            "en": "Responsible for sales, customer acquisition, strategic partnerships, and the operational expansion of the network.",
+        },
+    },
+    {
+        "name": {"de": "Vionë Kuklecaj", "en": "Viona Kuklecaj"},
+        "role": {"de": "Cybersecurity & IT", "en": "Cybersecurity & IT"},
+        "bio": {
+            "de": "Verantwortlich für die technische Entwicklung der Plattform, IT-Infrastruktur, Cybersicherheit sowie Website und App.",
+            "en": "Responsible for the platform's technical development, IT infrastructure, cybersecurity, as well as the website and mobile app.",
+        },
+    },
 ]
 
 

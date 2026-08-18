@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import get_current_user_optional
 from app.database import get_db
 from app.models import Space, User
-from app.translations import CATEGORIES, get_translator
+from app.translations import CATEGORIES, TEAM, get_translator
 
 router = APIRouter(tags=["pages"])
 templates = Jinja2Templates(directory="app/templates")
@@ -112,3 +112,10 @@ async def dashboard_page(request: Request, db: AsyncSession = Depends(get_db), u
 async def my_bookings_page(request: Request, db: AsyncSession = Depends(get_db), user: User | None = Depends(get_current_user_optional)):
     ctx = await _common_ctx(request, db, user)
     return templates.TemplateResponse(request, "my_bookings.html", ctx)
+
+
+@router.get("/about", response_class=HTMLResponse)
+async def about_page(request: Request, db: AsyncSession = Depends(get_db), user: User | None = Depends(get_current_user_optional)):
+    ctx = await _common_ctx(request, db, user)
+    ctx.update(team=TEAM)
+    return templates.TemplateResponse(request, "about.html", ctx)

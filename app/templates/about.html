@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ t.aboutTitle }} – Garaly{% endblock %}
+{% block content %}
+<main>
+  <div class="container" style="padding-top:24px;">
+    <div class="breadcrumb"><a href="/?lang={{ lang }}">{{ t.breadcrumbHome }}</a> / {{ t.aboutTitle }}</div>
+    <h1 class="page-title hfont">{{ t.aboutTitle }}</h1>
+    <p style="color:var(--ink-muted);max-width:640px;margin:-8px 0 40px;line-height:1.6;">{{ t.aboutIntro }}</p>
+  </div>
+
+  <section class="section" style="padding-top:0;">
+    <div class="container">
+      <div class="team-grid reveal-stagger">
+        {% for member in team %}
+        <div class="team-card">
+          <div class="team-avatar">{{ member.name[lang][0] | upper }}</div>
+          <div class="team-name">{{ member.name[lang] }}</div>
+          <div class="team-role">{{ member.role[lang] }}</div>
+          <p class="team-bio">{{ member.bio[lang] }}</p>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+</main>
+{% endblock %}

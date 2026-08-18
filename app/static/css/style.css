@@ -418,6 +418,28 @@ button { font-family: inherit; }
 .btn-decline { background: #fff; color: #b3261e; border: 1px solid #f3c9c4; font-weight: 600; cursor: pointer; }
 .btn-accept { background: var(--green); color: var(--btn-text-on-green); border: none; font-weight: 700; cursor: pointer; }
 
+/* ---------- About / Team ---------- */
+.team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.team-card {
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-card);
+  padding: 28px 24px; text-align: left;
+}
+.team-avatar {
+  width: 56px; height: 56px; border-radius: 50%; background: var(--green-soft); color: var(--green-deep);
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 22px;
+  margin-bottom: 16px;
+}
+.team-name { font-size: 17px; font-weight: 700; font-family: "Space Grotesk", "Inter", sans-serif; }
+.team-role { font-size: 13.5px; font-weight: 600; color: var(--green-deep); margin-top: 2px; margin-bottom: 12px; }
+.team-bio { font-size: 14px; line-height: 1.6; color: var(--ink-muted); margin: 0; }
+
+@media (max-width: 900px) {
+  .team-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 620px) {
+  .team-grid { grid-template-columns: 1fr; }
+}
+
 /* ---------- Auth pages ---------- */
 .auth-wrap { display: flex; justify-content: center; padding: 80px 20px; }
 .auth-card { width: 100%; max-width: 400px; background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-card); padding: 36px; }
