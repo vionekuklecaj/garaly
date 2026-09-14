@@ -106,7 +106,16 @@ button { font-family: inherit; }
   grid-template-columns: 1.05fr 0.95fr;
   gap: 56px;
   align-items: center;
-  padding: 88px 0 96px;
+  /* Longhand top/bottom only -- this div also has the .container class
+     (same element: <div className="container hero-inner">), and the
+     `padding` shorthand here was overriding .container's horizontal
+     padding entirely (equal specificity, this rule comes later), zeroing
+     out the side gutter. Barely noticeable on desktop (the container's
+     own max-width centering still leaves whitespace outside it), but on
+     mobile it meant hero content touched the screen edge while every
+     other section correctly kept its padding. */
+  padding-top: 88px;
+  padding-bottom: 96px;
   min-height: 560px;
 }
 .hero-badge {
