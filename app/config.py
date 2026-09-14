@@ -9,6 +9,13 @@ class Settings(BaseSettings):
     cookie_secure: bool = False
     environment: str = "development"
 
+    # Listing photo uploads -- see routers/images.py. Blank by default so
+    # the app still boots without them configured; the upload endpoint
+    # returns a clear 503 instead of crashing if they're unset.
+    cloudinary_cloud_name: str = ""
+    cloudinary_api_key: str = ""
+    cloudinary_api_secret: str = ""
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 

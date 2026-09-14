@@ -106,3 +106,12 @@ async def get_current_user_optional(
         return await get_current_user(garaly_session, db)
     except HTTPException:
         return None
+
+
+async def get_current_admin(user: User = Depends(get_current_user)) -> User:
+    """Gate for /api/admin/* -- same as get_current_user, plus is_admin.
+    404 rather than 403 so the moderation queue's existence isn't
+    discoverable by a non-admin poking at the URL."""
+    if not user.is_admin:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not found")
+    return user

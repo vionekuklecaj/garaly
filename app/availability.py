@@ -5,11 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Booking
 
-# A space is considered unavailable for a requested range if there's an
-# ACCEPTED booking that overlaps it. Pending requests don't block other
-# renters from asking -- the host picks one when several people ask for
-# overlapping dates, same as most marketplaces (Airbnb included).
-BLOCKING_STATUSES = ("accepted",)
+# A space is considered unavailable for a requested range if there's a
+# confirmed booking or a host self-block overlapping it. "accepted" is kept
+# for backward compatibility with rows created before booking became
+# instant-confirm (see Booking.status in models.py) -- new rows only ever
+# use "confirmed" or "blocked".
+BLOCKING_STATUSES = ("confirmed", "accepted", "blocked")
 
 
 async def has_conflicting_booking(

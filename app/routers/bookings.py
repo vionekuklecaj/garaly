@@ -1,3 +1,5 @@
+from datetime import date, timezone, datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -5,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.auth import get_current_user
 from app.availability import has_conflicting_booking
 from app.database import get_db
-from app.models import Booking, Space, User
-from app.schemas import BookingCreate, BookingDetailOut, BookingOut, BookingStatusUpdate
+from app.models import Booking, Review, Space, User
+from app.schemas import BookingCreate, BookingDetailOut, BookingOut
 
 router = APIRouter(prefix="/api/bookings", tags=["bookings"])
 
@@ -17,8 +19,11 @@ async def create_booking(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
+    """Reserving is instant -- no host approval step. A booking is
+    confirmed the moment it's created; the only gate is date-conflict
+    checking, same as before."""
     space = await db.get(Space, data.space_id)
-    if space is None or not space.is_active:
+    if space is None or not space.is_active or space.status != "approved":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Space not found")
     if space.owner_id == user.id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You can't book your own space")
@@ -35,11 +40,16 @@ async def create_booking(
         move_in_date=data.move_in_date,
         move_out_date=data.move_out_date,
         custom_period_note=data.custom_period_note,
+        status="confirmed",
     )
     db.add(booking)
     await db.commit()
     await db.refresh(booking)
     return booking
+
+
+def _is_past(move_out: date) -> bool:
+    return move_out < datetime.now(timezone.utc).date()
 
 
 @router.get("/me", response_model=list[BookingDetailOut])
@@ -48,16 +58,27 @@ async def my_bookings(user: User = Depends(get_current_user), db: AsyncSession =
     result = await db.execute(
         select(Booking, Space)
         .join(Space, Booking.space_id == Space.id)
-        .where(Booking.renter_id == user.id)
+        .where(Booking.renter_id == user.id, Booking.status != "blocked")
         .order_by(Booking.created_at.desc())
     )
+    rows = result.all()
+
+    reviewed_ids: set[str] = set()
+    if rows:
+        booking_ids = [b.id for b, _ in rows]
+        reviewed = await db.execute(select(Review.booking_id).where(Review.booking_id.in_(booking_ids)))
+        reviewed_ids = {r for (r,) in reviewed.all()}
+
     out = []
-    for booking, space in result.all():
+    for booking, space in rows:
+        is_past = _is_past(booking.move_out_date)
         out.append(
             BookingDetailOut(
                 **BookingOut.model_validate(booking).model_dump(),
                 space_title=space.title,
                 space_city=space.city,
+                is_past=is_past,
+                can_review=(is_past and booking.status == "confirmed" and booking.id not in reviewed_ids),
             )
         )
     return out
@@ -65,13 +86,15 @@ async def my_bookings(user: User = Depends(get_current_user), db: AsyncSession =
 
 @router.get("/received", response_model=list[BookingDetailOut])
 async def received_bookings(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    """Booking requests made on the current user's own listings -- powers the
-    host dashboard's request list."""
+    """Reservations made on the current user's own listings -- powers the
+    dashboard's bookings tab. Excludes the host's own blocked-date entries
+    (see routers/spaces.py's block_dates endpoints); those are a separate
+    "manage availability" concept, not a customer booking to review here."""
     result = await db.execute(
         select(Booking, Space, User)
         .join(Space, Booking.space_id == Space.id)
         .join(User, Booking.renter_id == User.id)
-        .where(Space.owner_id == user.id)
+        .where(Space.owner_id == user.id, Booking.status != "blocked")
         .order_by(Booking.created_at.desc())
     )
     out = []
@@ -83,44 +106,36 @@ async def received_bookings(user: User = Depends(get_current_user), db: AsyncSes
                 space_city=space.city,
                 renter_name=renter.name,
                 renter_email=renter.email,
+                is_past=_is_past(booking.move_out_date),
             )
         )
     return out
 
 
-@router.patch("/{booking_id}", response_model=BookingOut)
-async def update_booking_status(
+@router.patch("/{booking_id}/cancel", response_model=BookingOut)
+async def cancel_booking(
     booking_id: str,
-    data: BookingStatusUpdate,
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Accept or decline a booking request. Only the space's owner may do
-    this -- ownership is checked via a join, not trusted from the client."""
+    """A renter cancelling their own upcoming reservation. There's no host
+    accept/decline anymore (booking is instant), but a renter can still
+    back out of a stay that hasn't started yet -- same as any direct-book
+    marketplace."""
     booking = await db.get(Booking, booking_id)
-    if booking is None:
+    if booking is None or booking.renter_id != user.id or booking.status == "blocked":
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Booking not found")
 
-    space = await db.get(Space, booking.space_id)
-    if space is None or space.owner_id != user.id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your listing")
-
-    if booking.status != "pending":
+    if booking.status != "confirmed":
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Booking already resolved")
 
-    if data.status == "accepted":
-        # Re-check for conflicts at accept-time too: two renters could have
-        # both requested overlapping dates while both were still pending.
-        conflict = await has_conflicting_booking(
-            db, booking.space_id, booking.move_in_date, booking.move_out_date, exclude_booking_id=booking.id
+    if booking.move_in_date <= datetime.now(timezone.utc).date():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Can't cancel a reservation that's already started",
         )
-        if conflict:
-            raise HTTPException(
-                status_code=status.HTTP_409_CONFLICT,
-                detail="Another request for overlapping dates was already accepted",
-            )
 
-    booking.status = data.status
+    booking.status = "cancelled"
     await db.commit()
     await db.refresh(booking)
     return booking
