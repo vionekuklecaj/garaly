@@ -9,15 +9,33 @@ type Props = {
   t: Translator;
 };
 
-// Ported from initCategoryCarousel() in app/static/js/main.js, with the
-// snap-back glitch fixed: the original only corrected the seamless-loop
-// wrap point (loopIfNeeded) while the carousel was neither being dragged
-// nor auto-scrolling, so a drag/swipe that crossed the wrap boundary left
-// scrollLeft out of range until release -- then the very next frame
-// snapped it back hard. Wrapping now runs unconditionally every frame, so
-// the position never drifts out of range in the first place. Width is
-// also re-measured once the custom font finishes loading, since it's
-// measured on mount, before a late-loading font can reflow layout.
+// Ported from initCategoryCarousel() in app/static/js/main.js. Two
+// generations of the seamless-loop-wrap bug fixed here:
+//
+// 1. The original only corrected the wrap point (loopIfNeeded) while
+//    neither dragging nor auto-scrolling, so a drag/swipe that crossed the
+//    boundary left scrollLeft out of range until release -- then the next
+//    frame snapped it back hard.
+// 2. The first fix for that ran loopIfNeeded() unconditionally every
+//    frame instead, which fixed the desktop mouse-drag case (JS owns
+//    scrollLeft during a mouse drag, so correcting it mid-drag is safe) but
+//    was still glitchy on phones: during a touch gesture the *browser*
+//    owns scrollLeft via native momentum physics, and yanking it out from
+//    under that mid-gesture reads as a stutter/jump even though it's no
+//    longer a hard snap.
+//
+// The actual fix: only correct the wrap point when nothing native is
+// animating. That's true immediately after our own JS-driven scrollLeft
+// changes (auto-drift, mouse-drag -- safe to correct every frame), but for
+// touch it means waiting for the `scrollend` event (fires once *all*
+// scrolling, including momentum/inertia, has fully settled), with a
+// debounced `scroll` listener as a fallback for browsers without
+// `scrollend` support. Because the track is a duplicated set, sitting
+// anywhere in the second copy is already visually correct -- the
+// correction is only ever about resetting the number for the next lap, so
+// deferring it until the carousel is genuinely still makes it invisible.
+// Width is also re-measured once the custom font finishes loading, since
+// it's measured on mount, before a late-loading font can reflow layout.
 export default function CategoryCarousel({ lang, categories, t }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -104,6 +122,15 @@ export default function CategoryCarousel({ lang, categories, t }: Props) {
       touchEndTimeout = setTimeout(() => (autoScrollPaused = false), 1500);
     };
     const onScroll = () => requestAnimationFrame(updateCenterEmphasis);
+
+    // Debounced fallback for browsers without `scrollend` (mainly older
+    // Safari) -- if no scroll event fires for 120ms, treat that as settled.
+    let scrollIdleTimer: ReturnType<typeof setTimeout>;
+    const onScrollForIdleFallback = () => {
+      clearTimeout(scrollIdleTimer);
+      scrollIdleTimer = setTimeout(loopIfNeeded, 120);
+    };
+    const supportsScrollEnd = "onscrollend" in window;
     const onResize = () => measure();
 
     track.addEventListener("mousedown", onMouseDown);
@@ -115,15 +142,24 @@ export default function CategoryCarousel({ lang, categories, t }: Props) {
     track.addEventListener("touchstart", onTouchStart, { passive: true });
     track.addEventListener("touchend", onTouchEnd, { passive: true });
     track.addEventListener("scroll", onScroll);
+    if (supportsScrollEnd) {
+      track.addEventListener("scrollend", loopIfNeeded);
+    } else {
+      track.addEventListener("scroll", onScrollForIdleFallback);
+    }
     window.addEventListener("resize", onResize);
 
     function tick() {
       if (!autoScrollPaused && !isDown) {
         track!.scrollLeft += 0.4; // slow, continuous drift
+        loopIfNeeded(); // safe: this scroll position is entirely JS-driven
+      } else if (isDown) {
+        loopIfNeeded(); // safe: mouse-drag also sets scrollLeft synchronously in JS
       }
-      // Unlike the original, this runs every frame regardless of
-      // interaction state -- that's the fix for the drag/swipe snap-back.
-      loopIfNeeded();
+      // While a touch gesture (or its momentum) might be in progress,
+      // scrollLeft is native/browser-owned -- correcting it here would
+      // fight that physics. scrollend (or the idle-fallback above) handles
+      // the wrap for that case instead, once it's actually safe to.
       rafId = requestAnimationFrame(tick);
     }
 
@@ -138,6 +174,7 @@ export default function CategoryCarousel({ lang, categories, t }: Props) {
     return () => {
       cancelAnimationFrame(rafId);
       clearTimeout(touchEndTimeout);
+      clearTimeout(scrollIdleTimer);
       track.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("mousemove", onMouseMove);
@@ -147,6 +184,11 @@ export default function CategoryCarousel({ lang, categories, t }: Props) {
       track.removeEventListener("touchstart", onTouchStart);
       track.removeEventListener("touchend", onTouchEnd);
       track.removeEventListener("scroll", onScroll);
+      if (supportsScrollEnd) {
+        track.removeEventListener("scrollend", loopIfNeeded);
+      } else {
+        track.removeEventListener("scroll", onScrollForIdleFallback);
+      }
       window.removeEventListener("resize", onResize);
     };
   }, []);
