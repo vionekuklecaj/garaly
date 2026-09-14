@@ -1,0 +1,180 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import type { Lang, Translator } from "@/lib/translations";
+
+type Props = {
+  spaceId: string;
+  lang: Lang;
+  t: Translator;
+  isLoggedIn: boolean;
+  initialMoveIn: string;
+  initialMoveOut: string;
+};
+
+type AvailabilityState = "" | "checking" | "available" | "unavailable";
+
+// Ported from the <script> block in app/templates/detail.html.
+export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveIn, initialMoveOut }: Props) {
+  const [moveIn, setMoveIn] = useState(initialMoveIn);
+  const [moveOut, setMoveOut] = useState(initialMoveOut);
+  const [availability, setAvailability] = useState<AvailabilityState>("");
+  const [customPeriod, setCustomPeriod] = useState(false);
+  const [note, setNote] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [sent, setSent] = useState(false);
+
+  // null = unknown/not yet checked, true/false once checked -- mirrors
+  // `isAvailable` in the original script.
+  const isAvailableRef = useRef<boolean | null>(null);
+  const checkTokenRef = useRef(0);
+
+  async function checkAvailability(mIn: string, mOut: string) {
+    isAvailableRef.current = null;
+    if (!mIn || !mOut) {
+      setAvailability("");
+      return;
+    }
+    if (mOut < mIn) {
+      setAvailability("unavailable");
+      return;
+    }
+
+    const myToken = ++checkTokenRef.current;
+    setAvailability("checking");
+
+    try {
+      const params = new URLSearchParams({ move_in: mIn, move_out: mOut });
+      const res = await fetch(`/api/spaces/${spaceId}/availability?` + params.toString());
+      if (myToken !== checkTokenRef.current) return; // a newer check superseded this one
+      if (!res.ok) {
+        setAvailability("");
+        return;
+      }
+      const data = await res.json();
+      isAvailableRef.current = data.available;
+      setAvailability(data.available ? "available" : "unavailable");
+    } catch {
+      if (myToken !== checkTokenRef.current) return;
+      setAvailability("");
+    }
+  }
+
+  useEffect(() => {
+    if (!moveIn || !moveOut) return;
+    const handle = setTimeout(() => checkAvailability(moveIn, moveOut), 300);
+    return () => clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [moveIn, moveOut]);
+
+  useEffect(() => {
+    if (initialMoveIn && initialMoveOut) checkAvailability(initialMoveIn, initialMoveOut);
+    // Check immediately on mount if dates were prefilled from search --
+    // the debounced effect above only fires on subsequent changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+
+    if (!isLoggedIn) {
+      const params = new URLSearchParams({ lang, next: "/listing/" + spaceId });
+      window.location.href = "/login?" + params.toString();
+      return;
+    }
+
+    if (isAvailableRef.current === false) {
+      setError(t.notAvailableDates);
+      return;
+    }
+    if (isAvailableRef.current === null && moveIn && moveOut) {
+      await checkAvailability(moveIn, moveOut);
+      if (isAvailableRef.current === false) {
+        setError(t.notAvailableDates);
+        return;
+      }
+    }
+
+    setSubmitting(true);
+    const res = await fetch("/api/bookings", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        space_id: spaceId,
+        move_in_date: moveIn,
+        move_out_date: moveOut,
+        custom_period_note: customPeriod ? note : "",
+      }),
+    });
+
+    if (res.ok) {
+      setSent(true);
+    } else {
+      setSubmitting(false);
+      const data = await res.json().catch(() => ({}));
+      setError(data.detail || (lang === "de" ? "Etwas ist schiefgelaufen." : "Something went wrong."));
+    }
+  }
+
+  if (sent) {
+    return <p style={{ color: "var(--green-deep)", fontWeight: 600 }}>{lang === "de" ? "Anfrage gesendet!" : "Request sent!"}</p>;
+  }
+
+  return (
+    <form onSubmit={onSubmit}>
+      <div className="field">
+        <label>{t.searchMoveIn}</label>
+        <input type="date" required value={moveIn} onChange={(e) => setMoveIn(e.target.value)} />
+      </div>
+      <div className="field">
+        <label>{t.searchMoveOut}</label>
+        <input type="date" required value={moveOut} onChange={(e) => setMoveOut(e.target.value)} />
+      </div>
+
+      {availability && (
+        <div className={`availability-status ${availability}`}>
+          {availability === "checking" && t.checkingAvailability}
+          {availability === "available" && t.availableDates}
+          {availability === "unavailable" && t.notAvailableDates}
+        </div>
+      )}
+
+      <div className="field">
+        <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600, cursor: "pointer" }}>
+          <input
+            type="checkbox"
+            style={{ width: "auto" }}
+            checked={customPeriod}
+            onChange={(e) => setCustomPeriod(e.target.checked)}
+          />
+          {t.requestCustomPeriod}
+        </label>
+        {customPeriod && (
+          <textarea
+            rows={2}
+            style={{
+              display: "block",
+              width: "100%",
+              marginTop: 8,
+              padding: "10px 12px",
+              border: "1px solid var(--border)",
+              borderRadius: 10,
+              fontFamily: "inherit",
+              fontSize: 13.5,
+            }}
+            placeholder={`${t.requestCustomPeriod}...`}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+        )}
+      </div>
+
+      <button type="submit" className="btn-primary" style={{ width: "100%" }} disabled={submitting}>
+        {t.sendRequest}
+      </button>
+      {error && <div className="form-error visible">{error}</div>}
+    </form>
+  );
+}

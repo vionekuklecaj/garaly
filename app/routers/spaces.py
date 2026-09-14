@@ -58,6 +58,21 @@ async def list_spaces(
     }
 
 
+@router.get("/stats", response_model=dict)
+async def space_stats(db: AsyncSession = Depends(get_db)):
+    """Aggregate counts for the landing page hero stats. Mirrors the same
+    two queries the Jinja2 landing page has always computed inline
+    (app/routers/pages.py) -- exposed here as JSON so the Next.js frontend
+    can fetch them too. Must be declared before /{space_id}."""
+    total_spaces = (
+        await db.execute(select(func.count()).select_from(Space).where(Space.is_active.is_(True)))
+    ).scalar_one()
+    total_cities = (
+        await db.execute(select(func.count(func.distinct(Space.city))).where(Space.is_active.is_(True)))
+    ).scalar_one()
+    return {"total_spaces": total_spaces, "total_cities": total_cities}
+
+
 @router.get("/mine", response_model=list[SpaceOut])
 async def my_spaces(user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     """The current user's own listings, including inactive ones -- powers the
@@ -74,7 +89,13 @@ async def get_space(space_id: str, db: AsyncSession = Depends(get_db)):
     space = await db.get(Space, space_id)
     if space is None or not space.is_active:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Space not found")
-    return space
+    # The detail page shows who's hosting -- there's no public "get user by
+    # id" endpoint (and shouldn't be, to avoid exposing emails), so the
+    # owner's name rides along on the space response instead.
+    owner = await db.get(User, space.owner_id)
+    out = SpaceOut.model_validate(space)
+    out.owner_name = owner.name if owner else None
+    return out
 
 
 @router.get("/{space_id}/availability", response_model=AvailabilityOut)

@@ -53,6 +53,9 @@ class SpaceOut(BaseModel):
     size_sqm: float | None
     is_active: bool
     created_at: datetime
+    # Only populated by GET /api/spaces/{id} (the detail page needs it,
+    # nothing else does) -- see space_id route in routers/spaces.py.
+    owner_name: str | None = None
 
 
 # ---------- Bookings ----------
