@@ -2,6 +2,7 @@
 
 import type { Lang, Translator } from "@/lib/translations";
 import type { User } from "@/lib/types";
+import ProfileMenu from "./ProfileMenu";
 
 type Props = {
   lang: Lang;
@@ -18,11 +19,6 @@ export default function Header({ lang, user, t }: Props) {
     window.location.href = url.toString();
   }
 
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    window.location.href = "/?lang=" + lang;
-  }
-
   return (
     <header className="site-header">
       <a className="logo" href={`/?lang=${lang}`}>
@@ -35,12 +31,6 @@ export default function Header({ lang, user, t }: Props) {
         <a href={`/list-space?lang=${lang}`}>{t.navList}</a>
         <a href={`/?lang=${lang}#how-it-works`}>{t.navHow}</a>
         <a href={`/about?lang=${lang}`}>{t.navAbout}</a>
-        {user && (
-          <>
-            <a href={`/dashboard?lang=${lang}`}>{t.navDashboard}</a>
-            {user.is_admin && <a href={`/admin?lang=${lang}`}>{t.navAdmin}</a>}
-          </>
-        )}
       </nav>
 
       <div className="header-right">
@@ -50,15 +40,7 @@ export default function Header({ lang, user, t }: Props) {
           <span className={lang !== "en" ? "off" : ""}>EN</span>
         </button>
         {user ? (
-          <a
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              logout();
-            }}
-          >
-            {lang === "en" ? t.login : "Abmelden"}
-          </a>
+          <ProfileMenu lang={lang} user={user} t={t} />
         ) : (
           <a href={`/login?lang=${lang}`}>{t.login}</a>
         )}

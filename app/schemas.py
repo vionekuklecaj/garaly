@@ -28,6 +28,23 @@ class UserOut(BaseModel):
     created_at: datetime
 
 
+class AccountUpdate(BaseModel):
+    """PATCH /api/auth/me. Changing email or password requires
+    current_password -- a stolen/leftover session cookie shouldn't be
+    enough on its own to take over the account."""
+
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    email: EmailStr | None = None
+    new_password: str | None = Field(default=None, min_length=8, max_length=128)
+    current_password: str | None = None
+
+    @model_validator(mode="after")
+    def require_current_password_for_sensitive_changes(self):
+        if (self.email is not None or self.new_password is not None) and not self.current_password:
+            raise ValueError("current_password is required to change email or password")
+        return self
+
+
 # ---------- Images ----------
 
 class SpaceImageOut(BaseModel):

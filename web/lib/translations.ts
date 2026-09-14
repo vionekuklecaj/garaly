@@ -193,7 +193,14 @@ export const TRANSLATIONS = {
     "pausedNotice": "Diese Anzeige ist pausiert und nicht sichtbar.",
     "yourOwnListing": "Deine eigene Anzeige",
     "notLoggedInToSave": "Melde dich an, um Anzeigen zu merken.",
-    "linkCopied": "Link kopiert!"
+    "linkCopied": "Link kopiert!",
+    "logout": "Abmelden",
+    "myAccount": "Mein Konto",
+    "editAccountTitle": "Konto bearbeiten",
+    "currentPassword": "Aktuelles Passwort",
+    "currentPasswordHint": "Nur nötig, wenn du E-Mail oder Passwort änderst.",
+    "newPasswordOptional": "Neues Passwort (optional)",
+    "accountUpdated": "Konto aktualisiert."
   },
   "en": {
     "navFind": "Find a space",
@@ -385,7 +392,14 @@ export const TRANSLATIONS = {
     "pausedNotice": "This listing is paused and not visible.",
     "yourOwnListing": "Your own listing",
     "notLoggedInToSave": "Log in to save listings.",
-    "linkCopied": "Link copied!"
+    "linkCopied": "Link copied!",
+    "logout": "Log out",
+    "myAccount": "My Account",
+    "editAccountTitle": "Edit account",
+    "currentPassword": "Current password",
+    "currentPasswordHint": "Only needed if you're changing your email or password.",
+    "newPasswordOptional": "New password (optional)",
+    "accountUpdated": "Account updated."
   }
 } as const;
 
