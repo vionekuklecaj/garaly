@@ -119,7 +119,7 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
   }
 
   if (sent) {
-    return <p style={{ color: "var(--green-deep)", fontWeight: 600 }}>{lang === "de" ? "Anfrage gesendet!" : "Request sent!"}</p>;
+    return <p style={{ color: "var(--green-deep)", fontWeight: 600 }}>{t.reservationConfirmed}</p>;
   }
 
   return (
@@ -172,7 +172,7 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
       </div>
 
       <button type="submit" className="btn-primary" style={{ width: "100%" }} disabled={submitting}>
-        {t.sendRequest}
+        {t.reserveNow}
       </button>
       {error && <div className="form-error visible">{error}</div>}
     </form>

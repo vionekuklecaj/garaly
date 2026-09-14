@@ -37,16 +37,37 @@ export async function getLang(searchParamLang?: string | string[]): Promise<Lang
   return lang === "en" ? "en" : "de";
 }
 
-// Server-side GET helper for backend JSON endpoints that don't need the
-// caller's session (public listing data, counts, etc).
+// Server-side GET helper for backend JSON endpoints. Always forwards the
+// caller's session cookie when there is one -- needed for anything the
+// backend treats differently for the owner (e.g. GET /api/spaces/{id}
+// returning a pending/rejected listing only to its own owner). Harmless
+// for genuinely public data too: FastAPI's get_current_user_optional just
+// no-ops on a missing/invalid cookie.
 export async function backendGet<T>(path: string, init?: RequestInit): Promise<T | null> {
   try {
-    const res = await fetch(`${BACKEND_URL}${path}`, { cache: "no-store", ...init });
+    const jar = await cookies();
+    const token = jar.get(SESSION_COOKIE)?.value;
+    const headers = new Headers(init?.headers);
+    if (token && !headers.has("Cookie")) headers.set("Cookie", `${SESSION_COOKIE}=${token}`);
+
+    const res = await fetch(`${BACKEND_URL}${path}`, { cache: "no-store", ...init, headers });
     if (!res.ok) return null;
     return (await res.json()) as T;
   } catch {
     return null;
   }
+}
+
+// Server-side helper for backend calls that mutate state (POST/PATCH/DELETE)
+// on behalf of the logged-in user -- same cookie-forwarding as backendGet,
+// but returns the raw Response so the caller can check status/parse as
+// needed rather than assuming JSON.
+export async function backendFetch(path: string, init?: RequestInit): Promise<Response> {
+  const jar = await cookies();
+  const token = jar.get(SESSION_COOKIE)?.value;
+  const headers = new Headers(init?.headers);
+  if (token && !headers.has("Cookie")) headers.set("Cookie", `${SESSION_COOKIE}=${token}`);
+  return fetch(`${BACKEND_URL}${path}`, { cache: "no-store", ...init, headers });
 }
 
 type SearchParams = Record<string, string | string[] | undefined>;

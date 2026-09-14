@@ -82,7 +82,15 @@ async function handle(req: NextRequest, path: string[]): Promise<NextResponse> {
 
   const responseBody = await backendRes.arrayBuffer();
 
-  return new NextResponse(responseBody, {
+  // The Fetch spec forbids a body on "null body status" responses (204,
+  // 205, 304) -- the Response/NextResponse constructor throws if you pass
+  // one, even an empty ArrayBuffer. Several backend endpoints legitimately
+  // return 204 (save/unsave, delete-space, unblock-dates, delete-image,
+  // logout), so this isn't an edge case to shrug off.
+  const NULL_BODY_STATUSES = new Set([204, 205, 304]);
+  const finalBody = NULL_BODY_STATUSES.has(backendRes.status) ? null : responseBody;
+
+  return new NextResponse(finalBody, {
     status: backendRes.status,
     headers: responseHeaders,
   });

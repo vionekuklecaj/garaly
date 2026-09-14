@@ -37,8 +37,8 @@ export default function Header({ lang, user, t }: Props) {
         <a href={`/about?lang=${lang}`}>{t.navAbout}</a>
         {user && (
           <>
-            <a href={`/my-bookings?lang=${lang}`}>{t.navMyBookings}</a>
             <a href={`/dashboard?lang=${lang}`}>{t.navDashboard}</a>
+            {user.is_admin && <a href={`/admin?lang=${lang}`}>{t.navAdmin}</a>}
           </>
         )}
       </nav>

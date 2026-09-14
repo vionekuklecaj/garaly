@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { CATEGORIES, type Lang, type Translator } from "@/lib/translations";
+import type { AmenityKey } from "@/lib/types";
+import AmenitiesPicker from "./AmenitiesPicker";
 
 type Props = {
   lang: Lang;
@@ -14,6 +16,8 @@ export default function ListSpaceForm({ lang, t }: Props) {
   const [category, setCategory] = useState<string>(CATEGORIES[0].key);
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [amenities, setAmenities] = useState<AmenityKey[]>([]);
   const [priceMonth, setPriceMonth] = useState("");
   const [sizeSqm, setSizeSqm] = useState("");
   const [error, setError] = useState("");
@@ -34,6 +38,8 @@ export default function ListSpaceForm({ lang, t }: Props) {
         category,
         city,
         address,
+        zip_code: zipCode,
+        amenities,
         price_month: parseFloat(priceMonth),
         size_sqm: sizeSqm ? parseFloat(sizeSqm) : null,
       }),
@@ -52,7 +58,8 @@ export default function ListSpaceForm({ lang, t }: Props) {
   if (publishedId) {
     return (
       <div style={{ textAlign: "center", padding: "20px 0" }}>
-        <p style={{ color: "var(--green-deep)", fontWeight: 600, marginBottom: 16 }}>{t.listingPublished}</p>
+        <p style={{ color: "var(--green-deep)", fontWeight: 600, marginBottom: 8 }}>{t.listingPublished}</p>
+        <p style={{ color: "var(--ink-muted)", fontSize: 14, marginBottom: 16 }}>{t.pendingReviewNotice}</p>
         <a className="btn-primary" style={{ display: "inline-block" }} href={`/listing/${publishedId}?lang=${lang}`}>
           {t.viewListing}
         </a>
@@ -107,6 +114,10 @@ export default function ListSpaceForm({ lang, t }: Props) {
         <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} />
       </div>
       <div className="field">
+        <label>{t.fieldZip}</label>
+        <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} />
+      </div>
+      <div className="field">
         <label>{t.fieldAddress}</label>
         <input type="text" placeholder={t.fieldAddressPh} value={address} onChange={(e) => setAddress(e.target.value)} />
       </div>
@@ -119,7 +130,9 @@ export default function ListSpaceForm({ lang, t }: Props) {
         <input type="number" min={1} step={1} value={sizeSqm} onChange={(e) => setSizeSqm(e.target.value)} />
       </div>
 
-      <button type="submit" className="btn-primary" style={{ width: "100%" }} disabled={submitting}>
+      <AmenitiesPicker value={amenities} onChange={setAmenities} t={t} />
+
+      <button type="submit" className="btn-primary" style={{ width: "100%", marginTop: 16 }} disabled={submitting}>
         {t.publishListing}
       </button>
     </form>
