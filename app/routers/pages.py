@@ -1,122 +1,73 @@
-from fastapi import APIRouter, Depends, Request
-from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, Request
+from fastapi.responses import RedirectResponse
 
-from app.auth import get_current_user_optional
-from app.database import get_db
-from app.models import Space, User
-from app.translations import CATEGORIES, TEAM, get_translator
+from app.config import settings
 
 router = APIRouter(tags=["pages"])
-templates = Jinja2Templates(directory="app/templates")
+
+# The Jinja2 templates these routes used to render (landing.html,
+# search.html, detail.html, ...) were the real frontend through Phase 1-2.
+# The Next.js app in web/ (deployed to Vercel) has fully replaced them as
+# of Phase 3 -- this backend's own job now is just the JSON API under
+# /api/*, which is untouched by this file and still what the Next.js app's
+# proxy talks to. These routes exist only so old links/bookmarks to
+# garaly.onrender.com's pages land somewhere current instead of the frozen,
+# increasingly-stale HTML that used to be here (it drifted out of sync with
+# the API in Phase 3 -- e.g. the old dashboard's accept/decline buttons
+# call a booking-status endpoint that no longer exists).
+#
+# 307 (not 301) deliberately: this isn't necessarily permanent yet (no real
+# custom domain decided on), and 307 keeps it trivially reversible without
+# browsers/crawlers caching it as a permanent move.
 
 
-def _lang_from_request(request: Request) -> str:
-    lang = request.query_params.get("lang") or request.cookies.get("garaly_lang") or "de"
-    return lang if lang in ("de", "en") else "de"
+def _redirect(request: Request, path: str) -> RedirectResponse:
+    query = f"?{request.url.query}" if request.url.query else ""
+    return RedirectResponse(url=f"{settings.frontend_url}{path}{query}", status_code=307)
 
 
-async def _common_ctx(request: Request, db: AsyncSession, user: User | None) -> dict:
-    lang = _lang_from_request(request)
-    return {
-        "request": request,
-        "t": get_translator(lang),
-        "lang": lang,
-        "categories": CATEGORIES,
-        "user": user,
-    }
+@router.get("/")
+async def landing(request: Request):
+    return _redirect(request, "/")
 
 
-@router.get("/", response_class=HTMLResponse)
-async def landing(
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    user: User | None = Depends(get_current_user_optional),
-):
-    ctx = await _common_ctx(request, db, user)
-
-    total_spaces = (await db.execute(select(func.count()).select_from(Space).where(Space.is_active.is_(True)))).scalar_one()
-    total_cities = (await db.execute(select(func.count(func.distinct(Space.city))).where(Space.is_active.is_(True)))).scalar_one()
-
-    ctx.update(
-        total_spaces=total_spaces,
-        total_cities=total_cities,
-    )
-    return templates.TemplateResponse(request, "landing.html", ctx)
+@router.get("/search")
+async def search(request: Request):
+    return _redirect(request, "/search")
 
 
-@router.get("/search", response_class=HTMLResponse)
-async def search(
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    user: User | None = Depends(get_current_user_optional),
-):
-    ctx = await _common_ctx(request, db, user)
-    ctx.update(
-        city=request.query_params.get("city", ""),
-        active_category=request.query_params.get("category", "all"),
-        move_in=request.query_params.get("move_in", ""),
-        move_out=request.query_params.get("move_out", ""),
-        radius=request.query_params.get("radius", ""),
-    )
-    return templates.TemplateResponse(request, "search.html", ctx)
+@router.get("/listing/{space_id}")
+async def listing_detail(space_id: str, request: Request):
+    return _redirect(request, f"/listing/{space_id}")
 
 
-@router.get("/listing/{space_id}", response_class=HTMLResponse)
-async def listing_detail(
-    space_id: str,
-    request: Request,
-    db: AsyncSession = Depends(get_db),
-    user: User | None = Depends(get_current_user_optional),
-):
-    ctx = await _common_ctx(request, db, user)
-    space = await db.get(Space, space_id)
-    owner = await db.get(User, space.owner_id) if space else None
-    ctx.update(
-        space=space,
-        space_id=space_id,
-        owner=owner,
-        is_owner=bool(user and space and user.id == space.owner_id),
-        move_in=request.query_params.get("move_in", ""),
-        move_out=request.query_params.get("move_out", ""),
-    )
-    return templates.TemplateResponse(request, "detail.html", ctx)
+@router.get("/login")
+async def login_page(request: Request):
+    return _redirect(request, "/login")
 
 
-@router.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request, db: AsyncSession = Depends(get_db), user: User | None = Depends(get_current_user_optional)):
-    ctx = await _common_ctx(request, db, user)
-    return templates.TemplateResponse(request, "login.html", ctx)
+@router.get("/register")
+async def register_page(request: Request):
+    return _redirect(request, "/register")
 
 
-@router.get("/register", response_class=HTMLResponse)
-async def register_page(request: Request, db: AsyncSession = Depends(get_db), user: User | None = Depends(get_current_user_optional)):
-    ctx = await _common_ctx(request, db, user)
-    return templates.TemplateResponse(request, "register.html", ctx)
+@router.get("/list-space")
+async def list_space_page(request: Request):
+    return _redirect(request, "/list-space")
 
 
-@router.get("/list-space", response_class=HTMLResponse)
-async def list_space_page(request: Request, db: AsyncSession = Depends(get_db), user: User | None = Depends(get_current_user_optional)):
-    ctx = await _common_ctx(request, db, user)
-    return templates.TemplateResponse(request, "list_space.html", ctx)
+@router.get("/dashboard")
+async def dashboard_page(request: Request):
+    return _redirect(request, "/dashboard")
 
 
-@router.get("/dashboard", response_class=HTMLResponse)
-async def dashboard_page(request: Request, db: AsyncSession = Depends(get_db), user: User | None = Depends(get_current_user_optional)):
-    ctx = await _common_ctx(request, db, user)
-    return templates.TemplateResponse(request, "dashboard.html", ctx)
+@router.get("/my-bookings")
+async def my_bookings_page(request: Request):
+    # /my-bookings no longer exists as its own page in the new app -- it
+    # was folded into the dashboard's Bookings tab.
+    return _redirect(request, "/dashboard")
 
 
-@router.get("/my-bookings", response_class=HTMLResponse)
-async def my_bookings_page(request: Request, db: AsyncSession = Depends(get_db), user: User | None = Depends(get_current_user_optional)):
-    ctx = await _common_ctx(request, db, user)
-    return templates.TemplateResponse(request, "my_bookings.html", ctx)
-
-
-@router.get("/about", response_class=HTMLResponse)
-async def about_page(request: Request, db: AsyncSession = Depends(get_db), user: User | None = Depends(get_current_user_optional)):
-    ctx = await _common_ctx(request, db, user)
-    ctx.update(team=TEAM)
-    return templates.TemplateResponse(request, "about.html", ctx)
+@router.get("/about")
+async def about_page(request: Request):
+    return _redirect(request, "/about")

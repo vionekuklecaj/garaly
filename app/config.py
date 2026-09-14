@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     cloudinary_api_key: str = ""
     cloudinary_api_secret: str = ""
 
+    # Where routers/pages.py redirects the old Jinja2 page routes to, now
+    # that the Next.js app (in web/) is the real frontend. Override via env
+    # var (no code change needed) once this points at a real custom domain
+    # instead of the *.vercel.app URL.
+    frontend_url: str = "https://garaly.vercel.app"
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 
