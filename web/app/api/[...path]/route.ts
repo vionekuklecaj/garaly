@@ -35,18 +35,23 @@ async function handle(req: NextRequest, path: string[]): Promise<NextResponse> {
   });
 
   const hasBody = !["GET", "HEAD"].includes(req.method);
+  // Buffered rather than streamed through: these are small JSON/HTML
+  // payloads (no large file transfers yet), and streaming a ReadableStream
+  // straight into `new NextResponse()` turned out to silently drop the body
+  // on Vercel for chunked-transfer responses (reproduced on /api/auth/me,
+  // which FastAPI serves chunked since it has no Content-Length) -- it
+  // worked for other routes only because their responses happened to stream
+  // cleanly. Buffering both directions sidesteps that entirely.
+  const requestBody = hasBody ? await req.arrayBuffer() : undefined;
 
   let backendRes: Response;
   try {
     backendRes = await fetch(target, {
       method: req.method,
       headers: requestHeaders,
-      body: hasBody ? req.body : undefined,
+      body: requestBody,
       redirect: "manual",
       cache: "no-store",
-      // Required by undici when streaming a request body through fetch.
-      // @ts-expect-error -- `duplex` isn't in the standard RequestInit type yet.
-      duplex: hasBody ? "half" : undefined,
     });
   } catch {
     return NextResponse.json({ detail: "Backend unreachable" }, { status: 502 });
@@ -65,7 +70,8 @@ async function handle(req: NextRequest, path: string[]): Promise<NextResponse> {
     responseHeaders.append("set-cookie", cookie);
   }
 
-  return new NextResponse(backendRes.body, {
+  const responseBody = await backendRes.arrayBuffer();
+  return new NextResponse(responseBody, {
     status: backendRes.status,
     headers: responseHeaders,
   });
