@@ -78,6 +78,7 @@ async def listing_detail(
         space=space,
         space_id=space_id,
         owner=owner,
+        is_owner=bool(user and space and user.id == space.owner_id),
         move_in=request.query_params.get("move_in", ""),
         move_out=request.query_params.get("move_out", ""),
     )

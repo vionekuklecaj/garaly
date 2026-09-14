@@ -68,6 +68,10 @@
 
       <div class="booking-card reveal">
         <div class="booking-price">{{ space.price_month|int }} € <span class="unit">/ {{ t.perMonth }}</span></div>
+        {% if is_owner %}
+          <div style="background:#f1f3f1;color:var(--ink-muted);border-radius:10px;padding:10px 14px;font-size:13.5px;margin-bottom:16px;">{{ t.ownListingNotice }}</div>
+          <a class="btn-primary" style="width:100%;display:block;text-align:center;box-sizing:border-box;" href="/dashboard?lang={{ lang }}">{{ t.manageInDashboard }}</a>
+        {% else %}
         <form id="booking-form">
           <div class="field">
             <label>{{ t.searchMoveIn }}</label>
@@ -92,6 +96,7 @@
           <div class="form-error" id="booking-error"></div>
         </form>
         <div class="booking-note">{{ t.noChargeYet }}</div>
+        {% endif %}
       </div>
     </div>
     {% endif %}
