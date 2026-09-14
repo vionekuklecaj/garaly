@@ -8,6 +8,7 @@ import { BACKEND_URL } from "@/lib/session";
 // applied to that same first-party origin, not Render's.
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 // Headers that must not be forwarded verbatim in either direction (either
 // they're connection-specific, or forwarding the original would corrupt the
@@ -71,6 +72,17 @@ async function handle(req: NextRequest, path: string[]): Promise<NextResponse> {
   }
 
   const responseBody = await backendRes.arrayBuffer();
+
+  // TEMPORARY diagnostics -- an authenticated GET (e.g. /api/auth/me) comes
+  // back 200 with an empty body specifically when this runs as a deployed
+  // Vercel function, but not locally against the same real backend. These
+  // headers narrow down whether the bytes are missing before or after this
+  // point. Remove once root-caused.
+  responseHeaders.set("x-debug-backend-status", String(backendRes.status));
+  responseHeaders.set("x-debug-body-bytes", String(responseBody.byteLength));
+  responseHeaders.set("x-debug-had-cookie-header", String(req.headers.has("cookie")));
+  responseHeaders.set("x-debug-backend-content-type", backendRes.headers.get("content-type") || "(none)");
+
   return new NextResponse(responseBody, {
     status: backendRes.status,
     headers: responseHeaders,
