@@ -58,12 +58,21 @@ async function handle(req: NextRequest, path: string[]): Promise<NextResponse> {
     return NextResponse.json({ detail: "Backend unreachable" }, { status: 502 });
   }
 
+  // Allowlist rather than denylist for response headers: forwarding every
+  // header Render/Cloudflare put on the backend response (alt-svc, vary,
+  // server, cf-ray, rndr-id, cache-control, ...) turned out to make Vercel's
+  // Node runtime silently drop the response body on some requests --
+  // reproduced on GET /api/auth/me: the function's own arrayBuffer() read
+  // 145 real bytes (confirmed via a temporary debug header), yet the client
+  // received 200 with an empty body. Same code path worked fine run locally
+  // against the same real backend, so this is specific to how Vercel's
+  // runtime serves the response -- something in that header set was
+  // confusing it. The frontend only ever needs content-type and
+  // set-cookie from the backend anyway; nothing else is Render/Cloudflare
+  // infrastructure detail the browser should see.
   const responseHeaders = new Headers();
-  backendRes.headers.forEach((value, key) => {
-    if (!HOP_BY_HOP.has(key.toLowerCase()) && key.toLowerCase() !== "set-cookie") {
-      responseHeaders.set(key, value);
-    }
-  });
+  const contentType = backendRes.headers.get("content-type");
+  if (contentType) responseHeaders.set("content-type", contentType);
   // Headers.get("set-cookie") collapses multiple cookies into one string;
   // getSetCookie() preserves them as separate entries, which is what a
   // multi-cookie response (rare here, but future-proof) needs.
@@ -72,16 +81,6 @@ async function handle(req: NextRequest, path: string[]): Promise<NextResponse> {
   }
 
   const responseBody = await backendRes.arrayBuffer();
-
-  // TEMPORARY diagnostics -- an authenticated GET (e.g. /api/auth/me) comes
-  // back 200 with an empty body specifically when this runs as a deployed
-  // Vercel function, but not locally against the same real backend. These
-  // headers narrow down whether the bytes are missing before or after this
-  // point. Remove once root-caused.
-  responseHeaders.set("x-debug-backend-status", String(backendRes.status));
-  responseHeaders.set("x-debug-body-bytes", String(responseBody.byteLength));
-  responseHeaders.set("x-debug-had-cookie-header", String(req.headers.has("cookie")));
-  responseHeaders.set("x-debug-backend-content-type", backendRes.headers.get("content-type") || "(none)");
 
   return new NextResponse(responseBody, {
     status: backendRes.status,
