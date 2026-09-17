@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.auth import get_current_user, get_current_user_optional
-from app.availability import has_conflicting_booking
+from app.availability import BLOCKING_STATUSES, has_conflicting_booking
 from app.database import get_db
 from app.models import Booking, Review, Space, User
 from app.schemas import (
@@ -17,6 +17,7 @@ from app.schemas import (
     SpaceCreate,
     SpaceOut,
     SpaceUpdate,
+    UnavailableRangeOut,
 )
 
 router = APIRouter(prefix="/api/spaces", tags=["spaces"])
@@ -146,6 +147,22 @@ async def check_availability(
 
     conflict = await has_conflicting_booking(db, space_id, move_in, move_out)
     return AvailabilityOut(available=not conflict)
+
+
+@router.get("/{space_id}/unavailable-dates", response_model=list[UnavailableRangeOut])
+async def list_unavailable_dates(space_id: str, db: AsyncSession = Depends(get_db)):
+    """Every booked/blocked range for this space, from today onward -- lets
+    the booking calendar shade unavailable days without a round trip per
+    date. Past ranges are excluded since they can't affect what's bookable
+    going forward."""
+    result = await db.execute(
+        select(Booking.move_in_date, Booking.move_out_date).where(
+            Booking.space_id == space_id,
+            Booking.status.in_(BLOCKING_STATUSES),
+            Booking.move_out_date >= date.today(),
+        )
+    )
+    return [UnavailableRangeOut(move_in_date=r.move_in_date, move_out_date=r.move_out_date) for r in result.all()]
 
 
 @router.post("", response_model=SpaceOut, status_code=status.HTTP_201_CREATED)

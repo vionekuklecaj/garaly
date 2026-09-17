@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Lang, Translator } from "@/lib/translations";
+import DateRangeCalendar from "./DateRangeCalendar";
 
 type Props = {
   spaceId: string;
@@ -85,6 +86,11 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
       return;
     }
 
+    if (!moveIn || !moveOut) {
+      setError(lang === "de" ? "Bitte Ein- und Auszugsdatum wählen." : "Please pick a move-in and move-out date.");
+      return;
+    }
+
     if (isAvailableRef.current === false) {
       setError(t.notAvailableDates);
       return;
@@ -124,14 +130,17 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
 
   return (
     <form onSubmit={onSubmit}>
-      <div className="field">
-        <label>{t.searchMoveIn}</label>
-        <input type="date" required value={moveIn} onChange={(e) => setMoveIn(e.target.value)} />
-      </div>
-      <div className="field">
-        <label>{t.searchMoveOut}</label>
-        <input type="date" required value={moveOut} onChange={(e) => setMoveOut(e.target.value)} />
-      </div>
+      <DateRangeCalendar
+        spaceId={spaceId}
+        lang={lang}
+        t={t}
+        moveIn={moveIn}
+        moveOut={moveOut}
+        onChange={(nextMoveIn, nextMoveOut) => {
+          setMoveIn(nextMoveIn);
+          setMoveOut(nextMoveOut);
+        }}
+      />
 
       {availability && (
         <div className={`availability-status ${availability}`}>

@@ -200,7 +200,11 @@ export const TRANSLATIONS = {
     "currentPassword": "Aktuelles Passwort",
     "currentPasswordHint": "Nur nötig, wenn du E-Mail oder Passwort änderst.",
     "newPasswordOptional": "Neues Passwort (optional)",
-    "accountUpdated": "Konto aktualisiert."
+    "accountUpdated": "Konto aktualisiert.",
+    "calLegendAvailable": "Verfügbar",
+    "calLegendBooked": "Belegt",
+    "calSelectMoveIn": "Einzugsdatum wählen",
+    "calSelectMoveOut": "Auszugsdatum wählen"
   },
   "en": {
     "navFind": "Find a space",
@@ -399,7 +403,11 @@ export const TRANSLATIONS = {
     "currentPassword": "Current password",
     "currentPasswordHint": "Only needed if you're changing your email or password.",
     "newPasswordOptional": "New password (optional)",
-    "accountUpdated": "Account updated."
+    "accountUpdated": "Account updated.",
+    "calLegendAvailable": "Available",
+    "calLegendBooked": "Booked",
+    "calSelectMoveIn": "Select move-in date",
+    "calSelectMoveOut": "Select move-out date"
   }
 } as const;
 

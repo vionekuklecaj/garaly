@@ -219,6 +219,15 @@ class AvailabilityOut(BaseModel):
     available: bool
 
 
+class UnavailableRangeOut(BaseModel):
+    """One booked/blocked date range -- deliberately just the dates, no
+    renter_id/name/etc. This is public (no auth) so the booking calendar
+    can shade unavailable days for anyone browsing a listing."""
+
+    move_in_date: date
+    move_out_date: date
+
+
 # ---------- Reviews ----------
 
 class ReviewCreate(BaseModel):

@@ -16,6 +16,11 @@ export type SpaceImage = {
   created_at: string;
 };
 
+export type UnavailableRange = {
+  move_in_date: string;
+  move_out_date: string;
+};
+
 // Matches app/constants.py's AMENITY_KEYS.
 export const AMENITY_KEYS = ["lighting", "electricity", "security", "access", "dry", "parking"] as const;
 export type AmenityKey = (typeof AMENITY_KEYS)[number];
