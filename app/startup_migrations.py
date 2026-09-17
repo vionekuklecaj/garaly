@@ -32,6 +32,8 @@ _STATEMENTS = [
     "ALTER TABLE spaces ADD COLUMN IF NOT EXISTS amenities VARCHAR(255) DEFAULT ''",
     "ALTER TABLE spaces ADD COLUMN IF NOT EXISTS status VARCHAR(20) DEFAULT 'approved'",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false",
+    "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS move_in_time TIME",
+    "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS move_out_time TIME",
 ]
 
 

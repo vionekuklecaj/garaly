@@ -28,7 +28,14 @@ async def create_booking(
     if space.owner_id == user.id:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You can't book your own space")
 
-    if await has_conflicting_booking(db, data.space_id, data.move_in_date, data.move_out_date):
+    if await has_conflicting_booking(
+        db,
+        data.space_id,
+        data.move_in_date,
+        data.move_out_date,
+        move_in_time=data.move_in_time,
+        move_out_time=data.move_out_time,
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="This space is already booked for part of the selected period",
@@ -39,6 +46,8 @@ async def create_booking(
         renter_id=user.id,
         move_in_date=data.move_in_date,
         move_out_date=data.move_out_date,
+        move_in_time=data.move_in_time,
+        move_out_time=data.move_out_time,
         custom_period_note=data.custom_period_note,
         status="confirmed",
     )

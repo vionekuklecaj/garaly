@@ -511,6 +511,11 @@ button { font-family: inherit; }
 .cal-day-booked { border: 1.5px solid #b3261e; color: #b3261e; cursor: not-allowed; background: #fdecea; }
 .cal-day-selected { background: var(--green); border-color: var(--green); color: var(--btn-text-on-green); font-weight: 700; }
 .cal-day-inrange { background: var(--green-soft); border-color: var(--green-light); }
+/* The live availability check for the currently-selected range came back
+   unavailable -- shown red instead of green so the calendar never
+   contradicts the availability-status line below it. */
+.cal-day-selected-booked { background: #b3261e; border-color: #b3261e; color: #fff; font-weight: 700; }
+.cal-day-inrange-booked { background: #fdecea; border-color: #f3c9c4; }
 .cal-legend { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 12px; color: var(--ink-muted); margin-top: 12px; }
 .cal-legend .cal-dot:not(:first-child) { margin-left: 14px; }
 .cal-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }

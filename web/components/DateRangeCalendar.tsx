@@ -11,6 +11,18 @@ type Props = {
   moveIn: string;
   moveOut: string;
   onChange: (moveIn: string, moveOut: string) => void;
+  // The live per-range check from BookingForm's own /availability call --
+  // used to color the *selected* days so they never contradict the
+  // availability-status line rendered below the calendar. The booked/blocked
+  // list fetched here is a point-in-time snapshot (taken once on mount) and
+  // can go stale the moment someone else books something, or the moment
+  // *this* user books something themselves without a page reload -- the
+  // live check is the one source of truth that can't be stale, since it's
+  // re-run right before submit too.
+  selectionStatus?: "" | "checking" | "available" | "unavailable";
+  // Bump this (e.g. after a successful booking) to force a re-fetch of the
+  // booked/blocked list, so the rest of the grid catches up too.
+  refreshToken?: number;
 };
 
 // Local-date formatting -- deliberately not toISOString(), which converts
@@ -42,7 +54,16 @@ function monthGrid(monthDate: Date): Date[] {
   return Array.from({ length: 42 }, (_, i) => new Date(year, month, 1 - leadingBlanks + i));
 }
 
-export default function DateRangeCalendar({ spaceId, lang, t, moveIn, moveOut, onChange }: Props) {
+export default function DateRangeCalendar({
+  spaceId,
+  lang,
+  t,
+  moveIn,
+  moveOut,
+  onChange,
+  selectionStatus = "",
+  refreshToken = 0,
+}: Props) {
   const [ranges, setRanges] = useState<UnavailableRange[] | null>(null);
   const [month, setMonth] = useState(() => startOfMonth(new Date()));
 
@@ -51,7 +72,7 @@ export default function DateRangeCalendar({ spaceId, lang, t, moveIn, moveOut, o
       .then((r) => (r.ok ? r.json() : []))
       .then(setRanges)
       .catch(() => setRanges([]));
-  }, [spaceId]);
+  }, [spaceId, refreshToken]);
 
   const todayStr = toISODate(new Date());
   const locale = lang === "de" ? "de-DE" : "en-US";
@@ -138,13 +159,25 @@ export default function DateRangeCalendar({ spaceId, lang, t, moveIn, moveOut, o
           const inRange = moveIn && moveOut && dateStr > moveIn && dateStr < moveOut;
           const disabled = isPast || unavailable || !inMonth;
 
+          const isSelectedPart = isStart || isEnd || inRange;
+          // A completed range (both ends picked) that the live check just
+          // came back "unavailable" for gets shown red, not green -- this
+          // is what keeps the calendar from ever contradicting the
+          // availability-status line rendered below it.
+          const selectedUnavailable = isSelectedPart && Boolean(moveIn) && Boolean(moveOut) && selectionStatus === "unavailable";
+
           const classes = ["cal-day"];
           if (!inMonth) classes.push("cal-day-outside");
           else if (isPast) classes.push("cal-day-past");
           else if (unavailable) classes.push("cal-day-booked");
           else classes.push("cal-day-available");
-          if (isStart || isEnd) classes.push("cal-day-selected");
-          else if (inRange) classes.push("cal-day-inrange");
+          if (selectedUnavailable) {
+            classes.push(isStart || isEnd ? "cal-day-selected-booked" : "cal-day-inrange-booked");
+          } else if (isStart || isEnd) {
+            classes.push("cal-day-selected");
+          } else if (inRange) {
+            classes.push("cal-day-inrange");
+          }
 
           return (
             <button

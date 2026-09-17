@@ -1,5 +1,5 @@
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, time, timezone
 
 from sqlalchemy import (
     Boolean,
@@ -9,6 +9,7 @@ from sqlalchemy import (
     Numeric,
     String,
     Text,
+    Time,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -123,6 +124,16 @@ class Booking(Base):
     # bookings as well as long-term rentals.
     move_in_date: Mapped[date] = mapped_column(Date, nullable=False)
     move_out_date: Mapped[date] = mapped_column(Date, nullable=False)
+    # Both null for a full-day (or multi-day) booking -- the historical/
+    # default case. Both set together (validated in schemas.BookingCreate)
+    # for an hourly booking, e.g. renting a garage for 3 hours -- only valid
+    # when move_in_date == move_out_date, since hour granularity across
+    # multiple days doesn't mean anything here. See availability.py for how
+    # this changes conflict-checking: two hourly bookings on the same day
+    # only conflict if their time windows actually overlap, instead of any
+    # same-day booking blocking the whole day.
+    move_in_time: Mapped[time | None] = mapped_column(Time, nullable=True)
+    move_out_time: Mapped[time | None] = mapped_column(Time, nullable=True)
     # Optional free-text note when the renter wants a period different from
     # what they searched for.
     custom_period_note: Mapped[str] = mapped_column(Text, default="")

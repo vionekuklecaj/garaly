@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, time
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
@@ -136,30 +136,44 @@ async def check_availability(
     space_id: str,
     move_in: date = Query(...),
     move_out: date = Query(...),
+    move_in_time: time | None = Query(default=None),
+    move_out_time: time | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ):
     if move_out < move_in:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="move_out must be on or after move_in")
+    if (move_in_time is None) != (move_out_time is None):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="move_in_time and move_out_time must be set together")
 
     space = await db.get(Space, space_id)
     if space is None or not space.is_active:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Space not found")
 
-    conflict = await has_conflicting_booking(db, space_id, move_in, move_out)
+    conflict = await has_conflicting_booking(
+        db, space_id, move_in, move_out, move_in_time=move_in_time, move_out_time=move_out_time
+    )
     return AvailabilityOut(available=not conflict)
 
 
 @router.get("/{space_id}/unavailable-dates", response_model=list[UnavailableRangeOut])
 async def list_unavailable_dates(space_id: str, db: AsyncSession = Depends(get_db)):
-    """Every booked/blocked range for this space, from today onward -- lets
-    the booking calendar shade unavailable days without a round trip per
-    date. Past ranges are excluded since they can't affect what's bookable
-    going forward."""
+    """Every full-day booked/blocked range for this space, from today
+    onward -- lets the booking calendar shade unavailable days without a
+    round trip per date. Past ranges are excluded since they can't affect
+    what's bookable going forward.
+
+    Hourly bookings (move_in_time set) are deliberately excluded here: they
+    only take up part of a day, so showing that whole day as booked on the
+    calendar would be misleading -- other hours are still free. The
+    day-level calendar only needs to know about bookings that take the
+    *entire* day; hour-level conflicts are caught by the live availability
+    check when someone's actually picking hours on a specific day."""
     result = await db.execute(
         select(Booking.move_in_date, Booking.move_out_date).where(
             Booking.space_id == space_id,
             Booking.status.in_(BLOCKING_STATUSES),
             Booking.move_out_date >= date.today(),
+            Booking.move_in_time.is_(None),
         )
     )
     return [UnavailableRangeOut(move_in_date=r.move_in_date, move_out_date=r.move_out_date) for r in result.all()]

@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime, time
 
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator, model_validator
 
@@ -163,6 +163,11 @@ class BookingCreate(BaseModel):
     space_id: str
     move_in_date: date
     move_out_date: date
+    # Both set together for an hourly booking (e.g. renting a garage for 3
+    # hours) -- only valid on a single day (move_in_date == move_out_date).
+    # Left both null for the default full-day/multi-day booking.
+    move_in_time: time | None = None
+    move_out_time: time | None = None
     # Set when the renter wants a period different from what they searched
     # for -- shown to the host, doesn't change move_in_date/move_out_date.
     custom_period_note: str = Field(default="", max_length=500)
@@ -171,6 +176,13 @@ class BookingCreate(BaseModel):
     def check_date_order(self):
         if self.move_out_date < self.move_in_date:
             raise ValueError("move_out_date must be on or after move_in_date")
+        if (self.move_in_time is None) != (self.move_out_time is None):
+            raise ValueError("move_in_time and move_out_time must be set together")
+        if self.move_in_time is not None:
+            if self.move_in_date != self.move_out_date:
+                raise ValueError("An hourly booking needs the same move_in_date and move_out_date")
+            if self.move_out_time <= self.move_in_time:
+                raise ValueError("move_out_time must be after move_in_time")
         return self
 
 
@@ -182,6 +194,8 @@ class BookingOut(BaseModel):
     renter_id: str
     move_in_date: date
     move_out_date: date
+    move_in_time: time | None = None
+    move_out_time: time | None = None
     custom_period_note: str
     status: str
     created_at: datetime

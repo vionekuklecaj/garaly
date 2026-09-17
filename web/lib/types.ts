@@ -73,6 +73,10 @@ export type Booking = {
   renter_id: string;
   move_in_date: string;
   move_out_date: string;
+  // "HH:MM:SS", both set together for an hourly booking, both null for a
+  // full-day/multi-day one. See app/models.py's Booking.move_in_time.
+  move_in_time?: string | null;
+  move_out_time?: string | null;
   custom_period_note: string;
   status: BookingStatus;
   created_at: string;
