@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { Lang, Translator } from "@/lib/translations";
 import DateRangeCalendar from "./DateRangeCalendar";
+import HourRangePicker from "./HourRangePicker";
 
 type Props = {
   spaceId: string;
@@ -187,20 +188,14 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
       />
 
       {isSingleDay && (
-        <div className="field">
-          <label style={{ fontWeight: 600 }}>{t.bookByHour}</label>
-          <div style={{ fontSize: 12.5, color: "var(--ink-muted)", marginBottom: 8 }}>{t.hourlyOnlySameDay}</div>
-          <div style={{ display: "flex", gap: 10 }}>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 12.5, color: "var(--ink-muted)", display: "block", marginBottom: 4 }}>{t.startTime}</label>
-              <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <label style={{ fontSize: 12.5, color: "var(--ink-muted)", display: "block", marginBottom: 4 }}>{t.endTime}</label>
-              <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
-            </div>
-          </div>
-        </div>
+        <HourRangePicker
+          startTime={startTime}
+          endTime={endTime}
+          onStartChange={setStartTime}
+          onEndChange={setEndTime}
+          t={t}
+          lang={lang}
+        />
       )}
 
       {availability && (
