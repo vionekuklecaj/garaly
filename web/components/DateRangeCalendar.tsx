@@ -94,8 +94,11 @@ export default function DateRangeCalendar({
       onChange(dateStr, "");
       return;
     }
-    // moveIn is set, moveOut isn't -- this click sets the end.
-    if (dateStr <= moveIn || rangeHasConflict(moveIn, dateStr)) {
+    // moveIn is set, moveOut isn't -- this click sets the end. Clicking
+    // the *same* day again is a valid single-day selection (needed for an
+    // hourly booking) -- only a click *before* the start re-starts the
+    // selection, not an equal one.
+    if (dateStr < moveIn || rangeHasConflict(moveIn, dateStr)) {
       // Picked before the start, or the range crosses a booked stretch --
       // treat as a new start instead of a confusing invalid range.
       onChange(dateStr, "");
