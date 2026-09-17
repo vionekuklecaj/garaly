@@ -209,8 +209,22 @@ export default function ManageListingForm({ lang, t, space: initial }: Props) {
         </div>
         {images.length < 8 && (
           <>
-            <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={onUpload} disabled={uploading} />
-            {uploading && <p style={{ color: "var(--ink-muted)", fontSize: 13 }}>{t.uploading}</p>}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              onChange={onUpload}
+              disabled={uploading}
+              style={{ display: "none" }}
+            />
+            <button
+              type="button"
+              className="btn-secondary"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading}
+            >
+              {uploading ? t.uploading : t.uploadPhoto}
+            </button>
           </>
         )}
       </div>
@@ -235,20 +249,20 @@ export default function ManageListingForm({ lang, t, space: initial }: Props) {
           ))
         )}
 
-        <form onSubmit={addBlock} style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "flex-end", marginTop: 12 }}>
-          <div className="field" style={{ marginBottom: 0 }}>
+        <form onSubmit={addBlock} className="block-form">
+          <div className="field">
             <label>{t.searchMoveIn}</label>
             <input type="date" required value={blockStart} onChange={(e) => setBlockStart(e.target.value)} />
           </div>
-          <div className="field" style={{ marginBottom: 0 }}>
+          <div className="field">
             <label>{t.searchMoveOut}</label>
             <input type="date" required value={blockEnd} onChange={(e) => setBlockEnd(e.target.value)} />
           </div>
-          <div className="field" style={{ marginBottom: 0, flex: 1, minWidth: 160 }}>
+          <div className="field block-form-note">
             <label>{t.blockedRangeNote}</label>
             <input type="text" value={blockNote} onChange={(e) => setBlockNote(e.target.value)} />
           </div>
-          <button type="submit" className="btn-primary">
+          <button type="submit" className="btn-primary block-form-submit">
             {t.addBlockedRange}
           </button>
         </form>
