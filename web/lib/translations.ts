@@ -205,10 +205,10 @@ export const TRANSLATIONS = {
     "calLegendBooked": "Belegt",
     "calSelectMoveIn": "Einzugsdatum wählen",
     "calSelectMoveOut": "Auszugsdatum wählen",
-    "bookByHour": "Nach Stunden buchen (statt ganztägig)",
+    "bookByHour": "Bestimmte Uhrzeit (optional)",
     "startTime": "Startzeit",
     "endTime": "Endzeit",
-    "hourlyOnlySameDay": "Stundenweise Buchung nur für einen einzelnen Tag."
+    "hourlyOnlySameDay": "Leer lassen, um den ganzen Tag zu buchen."
   },
   "en": {
     "navFind": "Find a space",
@@ -412,10 +412,10 @@ export const TRANSLATIONS = {
     "calLegendBooked": "Booked",
     "calSelectMoveIn": "Select move-in date",
     "calSelectMoveOut": "Select move-out date",
-    "bookByHour": "Book by the hour (instead of the whole day)",
+    "bookByHour": "Specific hours (optional)",
     "startTime": "Start time",
     "endTime": "End time",
-    "hourlyOnlySameDay": "Hourly booking is only for a single day."
+    "hourlyOnlySameDay": "Leave blank to book the whole day."
   }
 } as const;
 

@@ -20,11 +20,11 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
   const [moveIn, setMoveIn] = useState(initialMoveIn);
   const [moveOut, setMoveOut] = useState(initialMoveOut);
   const [availability, setAvailability] = useState<AvailabilityState>("");
-  // Hourly booking (e.g. "just need it for 3 hours") is only meaningful for
-  // a single selected day -- resetting it whenever the range stops being a
-  // single day keeps the checkbox from silently applying to a multi-day
-  // range it was never validated against.
-  const [hourly, setHourly] = useState(false);
+  // Hourly booking (e.g. "just need it for 3 hours") only makes sense for a
+  // single selected day. There's no separate checkbox for it -- as soon as
+  // move-in and move-out are the same day, the time fields just show up
+  // directly; leaving them blank books the whole day, filling them in
+  // books only those hours.
   const [startTime, setStartTime] = useState("");
   const [endTime, setEndTime] = useState("");
   const [customPeriod, setCustomPeriod] = useState(false);
@@ -35,10 +35,14 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
   const [calendarRefreshToken, setCalendarRefreshToken] = useState(0);
 
   const isSingleDay = Boolean(moveIn && moveOut && moveIn === moveOut);
+  const useHours = isSingleDay && Boolean(startTime) && Boolean(endTime);
 
   useEffect(() => {
-    if (!isSingleDay && hourly) setHourly(false);
-  }, [isSingleDay, hourly]);
+    if (!isSingleDay && (startTime || endTime)) {
+      setStartTime("");
+      setEndTime("");
+    }
+  }, [isSingleDay, startTime, endTime]);
 
   // null = unknown/not yet checked, true/false once checked -- mirrors
   // `isAvailable` in the original script.
@@ -87,10 +91,10 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
 
   useEffect(() => {
     if (!moveIn || !moveOut) return;
-    const handle = setTimeout(() => checkAvailability(moveIn, moveOut, hourly ? startTime : "", hourly ? endTime : ""), 300);
+    const handle = setTimeout(() => checkAvailability(moveIn, moveOut, startTime, endTime), 300);
     return () => clearTimeout(handle);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [moveIn, moveOut, hourly, startTime, endTime]);
+  }, [moveIn, moveOut, startTime, endTime]);
 
   useEffect(() => {
     if (initialMoveIn && initialMoveOut) checkAvailability(initialMoveIn, initialMoveOut, "", "");
@@ -114,8 +118,7 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
       return;
     }
 
-    const useHours = hourly && isSingleDay && startTime && endTime;
-    if (hourly && isSingleDay && (!startTime || !endTime)) {
+    if (isSingleDay && (startTime || endTime) && !(startTime && endTime)) {
       setError(lang === "de" ? "Bitte Start- und Endzeit wählen." : "Please pick a start and end time.");
       return;
     }
@@ -185,22 +188,18 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
 
       {isSingleDay && (
         <div className="field">
-          <label style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 600, cursor: "pointer" }}>
-            <input type="checkbox" style={{ width: "auto" }} checked={hourly} onChange={(e) => setHourly(e.target.checked)} />
-            {t.bookByHour}
-          </label>
-          {hourly && (
-            <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 12.5, color: "var(--ink-muted)", display: "block", marginBottom: 4 }}>{t.startTime}</label>
-                <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} required={hourly} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ fontSize: 12.5, color: "var(--ink-muted)", display: "block", marginBottom: 4 }}>{t.endTime}</label>
-                <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} required={hourly} />
-              </div>
+          <label style={{ fontWeight: 600 }}>{t.bookByHour}</label>
+          <div style={{ fontSize: 12.5, color: "var(--ink-muted)", marginBottom: 8 }}>{t.hourlyOnlySameDay}</div>
+          <div style={{ display: "flex", gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: 12.5, color: "var(--ink-muted)", display: "block", marginBottom: 4 }}>{t.startTime}</label>
+              <input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} />
             </div>
-          )}
+            <div style={{ flex: 1 }}>
+              <label style={{ fontSize: 12.5, color: "var(--ink-muted)", display: "block", marginBottom: 4 }}>{t.endTime}</label>
+              <input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} />
+            </div>
+          </div>
         </div>
       )}
 
