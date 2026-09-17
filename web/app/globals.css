@@ -219,6 +219,8 @@ button { font-family: inherit; }
   padding: 8px 4px 20px;
   scrollbar-width: none;
   user-select: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
 }
 .category-carousel.dragging { cursor: grabbing; scroll-snap-type: none; }
 .category-carousel::-webkit-scrollbar { display: none; }

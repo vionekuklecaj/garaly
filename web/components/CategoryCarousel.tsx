@@ -9,33 +9,42 @@ type Props = {
   t: Translator;
 };
 
-// Ported from initCategoryCarousel() in app/static/js/main.js. Two
-// generations of the seamless-loop-wrap bug fixed here:
+// Ported from initCategoryCarousel() in app/static/js/main.js. Three
+// generations of the touch glitch fixed here, each patch making the last
+// one's assumption wrong:
 //
-// 1. The original only corrected the wrap point (loopIfNeeded) while
-//    neither dragging nor auto-scrolling, so a drag/swipe that crossed the
-//    boundary left scrollLeft out of range until release -- then the next
-//    frame snapped it back hard.
-// 2. The first fix for that ran loopIfNeeded() unconditionally every
-//    frame instead, which fixed the desktop mouse-drag case (JS owns
-//    scrollLeft during a mouse drag, so correcting it mid-drag is safe) but
-//    was still glitchy on phones: during a touch gesture the *browser*
-//    owns scrollLeft via native momentum physics, and yanking it out from
-//    under that mid-gesture reads as a stutter/jump even though it's no
-//    longer a hard snap.
+// 1. Original: only corrected the seamless-loop wrap point while neither
+//    dragging nor auto-scrolling -- a swipe that crossed the wrap boundary
+//    left scrollLeft out of range until release, then snapped back hard.
+// 2. Fix #1: ran the wrap-correction unconditionally every frame instead.
+//    Fixed desktop mouse-drag (JS owns scrollLeft there) but still
+//    glitched on phones: during a touch gesture the *browser* owns
+//    scrollLeft via native momentum physics, and yanking it out from
+//    under that every frame reads as a stutter.
+// 3. Fix #2: deferred the correction to the `scrollend` event instead
+//    (fires once all scrolling, including momentum, has settled) so JS
+//    would never touch scrollLeft mid-gesture. Still reported as
+//    "shaking uncontrollably" on phone -- `scrollend` firing early or
+//    repeatedly during an active gesture on some mobile browsers (a real,
+//    documented inconsistency for a still-fairly-new API) means the
+//    exact thing this was meant to prevent could still happen. Also found
+//    a second, independent bug in this generation: the center-highlight
+//    effect scheduled a fresh requestAnimationFrame on *every* scroll
+//    event with no guard against one already being pending, so a fast
+//    swipe (many scroll events in quick succession) could queue up many
+//    of them, each doing a full layout-forcing pass over every card --
+//    real, measurable jank on a phone, independent of the loop bug.
 //
-// The actual fix: only correct the wrap point when nothing native is
-// animating. That's true immediately after our own JS-driven scrollLeft
-// changes (auto-drift, mouse-drag -- safe to correct every frame), but for
-// touch it means waiting for the `scrollend` event (fires once *all*
-// scrolling, including momentum/inertia, has fully settled), with a
-// debounced `scroll` listener as a fallback for browsers without
-// `scrollend` support. Because the track is a duplicated set, sitting
-// anywhere in the second copy is already visually correct -- the
-// correction is only ever about resetting the number for the next lap, so
-// deferring it until the carousel is genuinely still makes it invisible.
-// Width is also re-measured once the custom font finishes loading, since
-// it's measured on mount, before a late-loading font can reflow layout.
+// The actual fix: stop trying to make a JS-driven scrollLeft loop coexist
+// with native touch physics at all. Touch devices (detected once via
+// `pointer: coarse`, the standard "primary input is a finger" check) get
+// a plain, native horizontally-scrollable row -- no auto-drift, no loop
+// correction, no drag handlers, nothing ever touches scrollLeft. Native
+// touch scrolling that JS never interferes with cannot glitch, by
+// construction. The auto-scrolling seamless-loop flourish is kept for
+// desktop only, where scrollLeft is always JS-driven (the drift itself,
+// or a mouse drag) and never fought against real momentum physics -- that
+// part was never actually the source of the touch bugs.
 export default function CategoryCarousel({ lang, categories, t }: Props) {
   const trackRef = useRef<HTMLDivElement>(null);
 
@@ -46,23 +55,21 @@ export default function CategoryCarousel({ lang, categories, t }: Props) {
     const originalItems = Array.from(track.children) as HTMLElement[];
     if (!originalItems.length) return;
 
-    // Duplicate the set once so we can loop without a visible jump.
-    originalItems.forEach((item) => track.appendChild(item.cloneNode(true)));
-    const items = Array.from(track.children) as HTMLElement[];
+    const isTouch = window.matchMedia("(pointer: coarse)").matches;
 
-    let isDown = false;
-    let dragged = false;
-    let startX = 0;
-    let startScroll = 0;
-    let autoScrollPaused = false;
-    let halfWidth = 0;
-    let rafId = 0;
-
-    function measure() {
-      halfWidth = track!.scrollWidth / 2;
+    // Only duplicated for the desktop loop illusion -- a touch device just
+    // shows the categories once and scrolls normally to the end.
+    let items = originalItems;
+    if (!isTouch) {
+      originalItems.forEach((item) => track.appendChild(item.cloneNode(true)));
+      items = Array.from(track.children) as HTMLElement[];
     }
 
+    // rAF-throttled regardless of device: guards against queuing more than
+    // one pending update, which is what made this expensive on a fast swipe.
+    let centerEmphasisScheduled = false;
     function updateCenterEmphasis() {
+      centerEmphasisScheduled = false;
       const containerRect = track!.getBoundingClientRect();
       const centerX = containerRect.left + containerRect.width / 2;
       let closest: HTMLElement | null = null;
@@ -80,7 +87,35 @@ export default function CategoryCarousel({ lang, categories, t }: Props) {
       });
       if (closest) (closest as HTMLElement).classList.add("is-center");
     }
+    function scheduleCenterEmphasis() {
+      if (centerEmphasisScheduled) return;
+      centerEmphasisScheduled = true;
+      requestAnimationFrame(updateCenterEmphasis);
+    }
 
+    track.addEventListener("scroll", scheduleCenterEmphasis, { passive: true });
+    updateCenterEmphasis();
+
+    if (isTouch) {
+      // That's the entire touch setup. Native overflow-x:auto and native
+      // swipe-to-scroll handle everything else -- no JS in the loop at all.
+      return () => {
+        track.removeEventListener("scroll", scheduleCenterEmphasis);
+      };
+    }
+
+    // ---------------- Desktop only from here down ----------------
+    let isDown = false;
+    let dragged = false;
+    let startX = 0;
+    let startScroll = 0;
+    let autoScrollPaused = false;
+    let halfWidth = 0;
+    let rafId = 0;
+
+    function measure() {
+      halfWidth = track!.scrollWidth / 2;
+    }
     function loopIfNeeded() {
       if (halfWidth <= 0) return;
       if (track!.scrollLeft >= halfWidth) {
@@ -116,21 +151,6 @@ export default function CategoryCarousel({ lang, categories, t }: Props) {
     };
     const onMouseEnter = () => (autoScrollPaused = true);
     const onMouseLeave = () => (autoScrollPaused = false);
-    const onTouchStart = () => (autoScrollPaused = true);
-    let touchEndTimeout: ReturnType<typeof setTimeout>;
-    const onTouchEnd = () => {
-      touchEndTimeout = setTimeout(() => (autoScrollPaused = false), 1500);
-    };
-    const onScroll = () => requestAnimationFrame(updateCenterEmphasis);
-
-    // Debounced fallback for browsers without `scrollend` (mainly older
-    // Safari) -- if no scroll event fires for 120ms, treat that as settled.
-    let scrollIdleTimer: ReturnType<typeof setTimeout>;
-    const onScrollForIdleFallback = () => {
-      clearTimeout(scrollIdleTimer);
-      scrollIdleTimer = setTimeout(loopIfNeeded, 120);
-    };
-    const supportsScrollEnd = "onscrollend" in window;
     const onResize = () => measure();
 
     track.addEventListener("mousedown", onMouseDown);
@@ -139,32 +159,19 @@ export default function CategoryCarousel({ lang, categories, t }: Props) {
     track.addEventListener("click", onTrackClickCapture, true);
     track.addEventListener("mouseenter", onMouseEnter);
     track.addEventListener("mouseleave", onMouseLeave);
-    track.addEventListener("touchstart", onTouchStart, { passive: true });
-    track.addEventListener("touchend", onTouchEnd, { passive: true });
-    track.addEventListener("scroll", onScroll);
-    if (supportsScrollEnd) {
-      track.addEventListener("scrollend", loopIfNeeded);
-    } else {
-      track.addEventListener("scroll", onScrollForIdleFallback);
-    }
     window.addEventListener("resize", onResize);
 
     function tick() {
       if (!autoScrollPaused && !isDown) {
         track!.scrollLeft += 0.4; // slow, continuous drift
-        loopIfNeeded(); // safe: this scroll position is entirely JS-driven
-      } else if (isDown) {
-        loopIfNeeded(); // safe: mouse-drag also sets scrollLeft synchronously in JS
       }
-      // While a touch gesture (or its momentum) might be in progress,
-      // scrollLeft is native/browser-owned -- correcting it here would
-      // fight that physics. scrollend (or the idle-fallback above) handles
-      // the wrap for that case instead, once it's actually safe to.
+      // Always safe here -- this branch only ever runs on non-touch
+      // devices, so scrollLeft is never native/momentum-owned.
+      loopIfNeeded();
       rafId = requestAnimationFrame(tick);
     }
 
     measure();
-    updateCenterEmphasis();
     rafId = requestAnimationFrame(tick);
 
     if (typeof document !== "undefined" && "fonts" in document) {
@@ -173,22 +180,13 @@ export default function CategoryCarousel({ lang, categories, t }: Props) {
 
     return () => {
       cancelAnimationFrame(rafId);
-      clearTimeout(touchEndTimeout);
-      clearTimeout(scrollIdleTimer);
+      track.removeEventListener("scroll", scheduleCenterEmphasis);
       track.removeEventListener("mousedown", onMouseDown);
       window.removeEventListener("mouseup", onMouseUp);
       window.removeEventListener("mousemove", onMouseMove);
       track.removeEventListener("click", onTrackClickCapture, true);
       track.removeEventListener("mouseenter", onMouseEnter);
       track.removeEventListener("mouseleave", onMouseLeave);
-      track.removeEventListener("touchstart", onTouchStart);
-      track.removeEventListener("touchend", onTouchEnd);
-      track.removeEventListener("scroll", onScroll);
-      if (supportsScrollEnd) {
-        track.removeEventListener("scrollend", loopIfNeeded);
-      } else {
-        track.removeEventListener("scroll", onScrollForIdleFallback);
-      }
       window.removeEventListener("resize", onResize);
     };
   }, []);
