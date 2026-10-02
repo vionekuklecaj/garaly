@@ -15,6 +15,13 @@ type Props = {
   onChange: (next: PricingValues) => void;
 };
 
+const TIERS: { key: keyof PricingValues; icon: string; unitKey: "perHour" | "perDay" | "perWeek" | "perMonth" }[] = [
+  { key: "priceHour", icon: "🕐", unitKey: "perHour" },
+  { key: "priceDay", icon: "☀️", unitKey: "perDay" },
+  { key: "priceWeek", icon: "📅", unitKey: "perWeek" },
+  { key: "priceMonth", icon: "🗓️", unitKey: "perMonth" },
+];
+
 // Shared by ListSpaceForm and ManageListingForm -- a host fills in
 // whichever of the four periods makes sense for their space (at least one
 // required, enforced both here via hasAnyPriceTier() and server-side).
@@ -24,27 +31,33 @@ export default function PricingFields({ t, values, onChange }: Props) {
   }
 
   return (
-    <>
-      <div className="price-tiers-grid">
-        <div className="field">
-          <label>{t.fieldPriceHour}</label>
-          <input type="number" min={0.01} step={0.01} value={values.priceHour} onChange={(e) => set("priceHour", e.target.value)} />
-        </div>
-        <div className="field">
-          <label>{t.fieldPriceDay}</label>
-          <input type="number" min={0.01} step={0.01} value={values.priceDay} onChange={(e) => set("priceDay", e.target.value)} />
-        </div>
-        <div className="field">
-          <label>{t.fieldPriceWeek}</label>
-          <input type="number" min={0.01} step={0.01} value={values.priceWeek} onChange={(e) => set("priceWeek", e.target.value)} />
-        </div>
-        <div className="field">
-          <label>{t.fieldPriceMonth}</label>
-          <input type="number" min={0.01} step={0.01} value={values.priceMonth} onChange={(e) => set("priceMonth", e.target.value)} />
-        </div>
+    <div className="price-tiers-card">
+      <div className="price-tiers-head">
+        <span className="price-tiers-label">{t.pricingSectionTitle}</span>
+        <span className="price-tiers-hint">{t.pricingTiersNote}</span>
       </div>
-      <p className="price-tiers-note">{t.pricingTiersNote}</p>
-    </>
+      <div className="price-tiers-grid">
+        {TIERS.map((tier) => (
+          <div className="price-tier-field" key={tier.key}>
+            <label htmlFor={`price-${tier.key}`}>
+              <span className="price-tier-icon">{tier.icon}</span> {t[tier.unitKey]}
+            </label>
+            <div className="price-tier-input-wrap">
+              <span className="price-tier-currency">€</span>
+              <input
+                id={`price-${tier.key}`}
+                type="number"
+                min={0.01}
+                step={0.01}
+                placeholder="0"
+                value={values[tier.key]}
+                onChange={(e) => set(tier.key, e.target.value)}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

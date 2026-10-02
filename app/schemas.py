@@ -285,3 +285,50 @@ class ReviewOut(BaseModel):
     comment: str
     created_at: datetime
     renter_name: str | None = None
+
+
+# ---------- Conversations / messages ----------
+
+class ConversationStart(BaseModel):
+    space_id: str
+
+
+class ConversationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    space_id: str
+    host_id: str
+    renter_id: str
+    created_at: datetime
+    last_message_at: datetime
+
+
+class ConversationSummaryOut(ConversationOut):
+    """Plus the denormalized bits the inbox list needs to render without an
+    extra round trip per row: which listing, who the other person is, a
+    preview of the last message, and how many are unread."""
+
+    space_title: str
+    other_party_name: str
+    last_message_preview: str = ""
+    unread_count: int = 0
+
+
+class MessageCreate(BaseModel):
+    body: str = Field(min_length=1, max_length=4000)
+
+
+class MessageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    conversation_id: str
+    sender_id: str
+    body: str
+    created_at: datetime
+    read_at: datetime | None = None
+
+
+class UnreadCountOut(BaseModel):
+    count: int

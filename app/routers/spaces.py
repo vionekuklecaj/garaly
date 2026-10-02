@@ -82,8 +82,31 @@ async def list_spaces(
     stmt = stmt.order_by(Space.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
     rows = (await db.execute(stmt)).scalars().all()
 
+    # One extra query for this page's review stats (rather than a join on
+    # the main query, which would need Space columns in a GROUP BY) --
+    # still a single round trip regardless of how many spaces are on the
+    # page, unlike calling _review_stats per row.
+    stats_by_space: dict[str, tuple[float | None, int]] = {}
+    if rows:
+        space_ids = [r.id for r in rows]
+        stats_result = await db.execute(
+            select(Review.space_id, func.avg(Review.rating), func.count(Review.id))
+            .where(Review.space_id.in_(space_ids))
+            .group_by(Review.space_id)
+        )
+        for space_id, avg, count in stats_result.all():
+            stats_by_space[space_id] = (round(float(avg), 1), count)
+
+    items = []
+    for r in rows:
+        out = SpaceOut.model_validate(r)
+        avg, count = stats_by_space.get(r.id, (None, 0))
+        out.review_average = avg
+        out.review_count = count
+        items.append(out)
+
     return {
-        "items": [SpaceOut.model_validate(r) for r in rows],
+        "items": items,
         "total": total,
         "page": page,
         "page_size": page_size,

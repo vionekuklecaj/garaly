@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app import startup_migrations
 from app.database import Base, engine
-from app.routers import admin, auth_routes, bookings, images, pages, reviews, saved, spaces
+from app.routers import admin, auth_routes, bookings, conversations, images, pages, reviews, saved, spaces
 
 
 @asynccontextmanager
@@ -37,6 +37,7 @@ app.include_router(admin.router)
 app.include_router(saved.router)
 app.include_router(reviews.router)
 app.include_router(images.router)
+app.include_router(conversations.router)
 
 
 @app.get("/health")

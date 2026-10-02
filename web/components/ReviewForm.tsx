@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { Translator } from "@/lib/translations";
+import StarRatingInput from "./StarRatingInput";
 
 type Props = { bookingId: string; lang: string; t: Translator };
 
@@ -46,14 +47,7 @@ export default function ReviewForm({ bookingId, lang, t }: Props) {
       {error && <div className="form-error visible">{error}</div>}
       <div className="field">
         <label>{t.yourRating}</label>
-        <select value={rating} onChange={(e) => setRating(Number(e.target.value))}>
-          {[5, 4, 3, 2, 1].map((n) => (
-            <option key={n} value={n}>
-              {"★".repeat(n)}
-              {"☆".repeat(5 - n)}
-            </option>
-          ))}
-        </select>
+        <StarRatingInput value={rating} onChange={setRating} />
       </div>
       <div className="field">
         <label>{t.yourComment}</label>

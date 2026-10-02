@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { CATEGORIES, type Lang, type Translator } from "@/lib/translations";
 import type { Space, SpaceListResponse } from "@/lib/types";
 import { headlinePrice } from "@/lib/pricing";
+import StarRating from "./StarRating";
 
 type Props = {
   lang: Lang;
@@ -113,7 +114,11 @@ export default function SearchResults({ lang, t, city, activeCategory, moveIn, m
                         <span style={{ fontWeight: 400, color: "var(--ink-muted)" }}>/ {t[hp.unit]}</span>
                       </div>
                     )}
-                    <div className="rating">★ 4.8</div>
+                    {space.review_count ? (
+                      <div className="rating">
+                        <StarRating value={space.review_average || 0} size={12} showValue />
+                      </div>
+                    ) : null}
                   </div>
                 </div>
               </div>

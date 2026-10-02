@@ -3,6 +3,7 @@
 import type { Lang, Translator } from "@/lib/translations";
 import type { User } from "@/lib/types";
 import ProfileMenu from "./ProfileMenu";
+import InboxNavButton from "./InboxNavButton";
 
 type Props = {
   lang: Lang;
@@ -40,7 +41,10 @@ export default function Header({ lang, user, t }: Props) {
           <span className={lang !== "en" ? "off" : ""}>EN</span>
         </button>
         {user ? (
-          <ProfileMenu lang={lang} user={user} t={t} />
+          <>
+            <InboxNavButton lang={lang} t={t} />
+            <ProfileMenu lang={lang} user={user} t={t} />
+          </>
         ) : (
           <a href={`/login?lang=${lang}`}>{t.login}</a>
         )}

@@ -3,6 +3,8 @@ import BookingForm from "@/components/BookingForm";
 import SaveButton from "@/components/SaveButton";
 import ShareButton from "@/components/ShareButton";
 import ReviewForm from "@/components/ReviewForm";
+import MessageHostButton from "@/components/MessageHostButton";
+import StarRating from "@/components/StarRating";
 import { getPageContext, backendGet } from "@/lib/session";
 import { AMENITY_KEYS, type AmenityKey, type Review, type Space } from "@/lib/types";
 import type { Translator } from "@/lib/translations";
@@ -67,9 +69,22 @@ export default async function ListingDetailPage({
               <div className="detail-header-row">
                 <div>
                   <h1 className="detail-title hfont">{space.title}</h1>
-                  <div className="detail-meta">
-                    {space.city}
-                    {space.review_count ? ` · ★ ${space.review_average} (${space.review_count} ${t.reviews})` : ` · ${t.noReviewsYet}`}
+                  <div className="detail-meta" style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <span>{space.city}</span>
+                    {space.review_count ? (
+                      <>
+                        <span>·</span>
+                        <StarRating value={space.review_average || 0} size={14} showValue />
+                        <span>
+                          ({space.review_count} {t.reviews})
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span>·</span>
+                        <span>{t.noReviewsYet}</span>
+                      </>
+                    )}
                   </div>
                 </div>
                 <div className="detail-actions">
@@ -166,7 +181,7 @@ export default async function ListingDetailPage({
                         <div key={r.id} className="request-card">
                           <div className="row1">
                             <div className="title">{r.renter_name}</div>
-                            <span className="status-badge accepted">{"★".repeat(r.rating)}</span>
+                            <StarRating value={r.rating} size={15} />
                           </div>
                           {r.comment && <div className="note">{r.comment}</div>}
                         </div>
@@ -229,7 +244,10 @@ export default async function ListingDetailPage({
                         initialMoveIn={moveIn}
                         initialMoveOut={moveOut}
                       />
-                      <div className="booking-note">{t.noChargeYet}</div>
+                      <div className="booking-note" style={{ marginBottom: 12 }}>
+                        {t.noChargeYet}
+                      </div>
+                      <MessageHostButton spaceId={space.id} lang={lang} t={t} isLoggedIn={Boolean(user)} loginHref={loginHref} />
                     </>
                   )}
                 </div>

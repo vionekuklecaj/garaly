@@ -57,6 +57,7 @@ export const TRANSLATIONS = {
     "changeDates": "Daten ändern",
     "navMyBookings": "Meine Anfragen",
     "navDashboard": "Dashboard",
+    "navInbox": "Nachrichten",
     "listSpaceTitle": "Raum anbieten",
     "listSpaceSub": "Erstelle eine neue Anzeige in wenigen Minuten.",
     "fieldTitle": "Titel",
@@ -72,6 +73,7 @@ export const TRANSLATIONS = {
     "fieldPriceDay": "Preis pro Tag (€)",
     "fieldPriceWeek": "Preis pro Woche (€)",
     "fieldPriceMonth": "Preis pro Monat (€)",
+    "pricingSectionTitle": "Preise",
     "pricingTiersNote": "Mindestens einen Zeitraum angeben – leer lassen, was nicht zutrifft.",
     "fieldSize": "Größe (m², optional)",
     "publishListing": "Anzeige veröffentlichen",
@@ -233,7 +235,14 @@ export const TRANSLATIONS = {
     "bookByHour": "Bestimmte Uhrzeit (optional)",
     "startTime": "Startzeit",
     "endTime": "Endzeit",
-    "hourlyOnlySameDay": "Leer lassen, um den ganzen Tag zu buchen."
+    "hourlyOnlySameDay": "Leer lassen, um den ganzen Tag zu buchen.",
+    "inboxTitle": "Nachrichten",
+    "inboxEmpty": "Noch keine Unterhaltungen.",
+    "selectConversation": "Wähle eine Unterhaltung aus.",
+    "messageHost": "Host kontaktieren",
+    "messagePlaceholder": "Nachricht schreiben...",
+    "sendMessage": "Senden",
+    "noMessagesYet": "Noch keine Nachrichten. Schreib die erste!"
   },
   "en": {
     "navFind": "Find a space",
@@ -289,6 +298,7 @@ export const TRANSLATIONS = {
     "changeDates": "Change dates",
     "navMyBookings": "My requests",
     "navDashboard": "Dashboard",
+    "navInbox": "Messages",
     "listSpaceTitle": "List your space",
     "listSpaceSub": "Create a new listing in a couple of minutes.",
     "fieldTitle": "Title",
@@ -304,6 +314,7 @@ export const TRANSLATIONS = {
     "fieldPriceDay": "Price per day (€)",
     "fieldPriceWeek": "Price per week (€)",
     "fieldPriceMonth": "Price per month (€)",
+    "pricingSectionTitle": "Pricing",
     "pricingTiersNote": "Set at least one period — leave the rest blank.",
     "fieldSize": "Size (m², optional)",
     "publishListing": "Publish listing",
@@ -465,7 +476,14 @@ export const TRANSLATIONS = {
     "bookByHour": "Specific hours (optional)",
     "startTime": "Start time",
     "endTime": "End time",
-    "hourlyOnlySameDay": "Leave blank to book the whole day."
+    "hourlyOnlySameDay": "Leave blank to book the whole day.",
+    "inboxTitle": "Messages",
+    "inboxEmpty": "No conversations yet.",
+    "selectConversation": "Select a conversation.",
+    "messageHost": "Message host",
+    "messagePlaceholder": "Write a message...",
+    "sendMessage": "Send",
+    "noMessagesYet": "No messages yet. Say hello!"
   }
 } as const;
 

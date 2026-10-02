@@ -123,3 +123,28 @@ export type Review = {
   created_at: string;
   renter_name?: string | null;
 };
+
+export type Conversation = {
+  id: string;
+  space_id: string;
+  host_id: string;
+  renter_id: string;
+  created_at: string;
+  last_message_at: string;
+};
+
+export type ConversationSummary = Conversation & {
+  space_title: string;
+  other_party_name: string;
+  last_message_preview: string;
+  unread_count: number;
+};
+
+export type Message = {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  body: string;
+  created_at: string;
+  read_at?: string | null;
+};

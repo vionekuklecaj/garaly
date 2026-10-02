@@ -10,6 +10,7 @@ from sqlalchemy import (
     String,
     Text,
     Time,
+    UniqueConstraint,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -210,3 +211,46 @@ class SavedListing(Base):
 
     user: Mapped["User"] = relationship(back_populates="saved")
     space: Mapped["Space"] = relationship(back_populates="saved_by")
+
+
+class Conversation(Base):
+    """A chat thread tied to one listing, between that listing's host and
+    one renter -- at most one conversation per (space, renter) pair, so a
+    renter messaging about the same listing twice lands in the same
+    thread. host_id duplicates Space.owner_id, kept denormalized so
+    "conversations I'm part of" is a single indexed query instead of a
+    join through spaces on every list."""
+
+    __tablename__ = "conversations"
+    __table_args__ = (UniqueConstraint("space_id", "renter_id", name="uq_conversation_space_renter"),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    space_id: Mapped[str] = mapped_column(String(36), ForeignKey("spaces.id"), index=True, nullable=False)
+    host_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True, nullable=False)
+    renter_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), index=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+    # Bumped on every new message -- lets the inbox list order by most
+    # recently active thread without a join/subquery against messages.
+    last_message_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now)
+
+    space: Mapped["Space"] = relationship()
+    host: Mapped["User"] = relationship(foreign_keys=[host_id])
+    renter: Mapped["User"] = relationship(foreign_keys=[renter_id])
+    messages: Mapped[list["Message"]] = relationship(
+        back_populates="conversation", cascade="all, delete-orphan", order_by="Message.created_at"
+    )
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=_uuid)
+    conversation_id: Mapped[str] = mapped_column(String(36), ForeignKey("conversations.id"), index=True, nullable=False)
+    sender_id: Mapped[str] = mapped_column(String(36), ForeignKey("users.id"), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_now, index=True)
+    # Null until the recipient (the conversation's other participant) has
+    # opened the thread -- see PATCH .../read in routers/conversations.py.
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    conversation: Mapped["Conversation"] = relationship(back_populates="messages")
