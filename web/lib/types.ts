@@ -22,7 +22,20 @@ export type UnavailableRange = {
 };
 
 // Matches app/constants.py's AMENITY_KEYS.
-export const AMENITY_KEYS = ["lighting", "electricity", "security", "access", "dry", "parking"] as const;
+export const AMENITY_KEYS = [
+  "lighting",
+  "electricity",
+  "security",
+  "access",
+  "dry",
+  "parking",
+  "heating",
+  "alarm",
+  "elevator",
+  "wide_door",
+  "shelving",
+  "step_free",
+] as const;
 export type AmenityKey = (typeof AMENITY_KEYS)[number];
 
 export type SpaceStatus = "pending_review" | "approved" | "rejected";

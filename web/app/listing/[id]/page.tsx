@@ -16,6 +16,12 @@ const AMENITY_ICONS: Record<AmenityKey, string> = {
   access: "🔑",
   dry: "☀️",
   parking: "🚗",
+  heating: "🔥",
+  alarm: "🚨",
+  elevator: "🛗",
+  wide_door: "🚪",
+  shelving: "🗄️",
+  step_free: "♿",
 };
 
 function amenityLabel(key: AmenityKey, t: Translator): string {
