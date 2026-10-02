@@ -33,6 +33,8 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [sent, setSent] = useState(false);
+  const [confirmedTotal, setConfirmedTotal] = useState<number | null>(null);
+  const [priceQuote, setPriceQuote] = useState<number | null>(null);
   const [calendarRefreshToken, setCalendarRefreshToken] = useState(0);
 
   const isSingleDay = Boolean(moveIn && moveOut && moveIn === moveOut);
@@ -97,6 +99,40 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [moveIn, moveOut, startTime, endTime]);
 
+  // Live total-price preview for whatever period is currently selected --
+  // same math as what create_booking actually stores (see app/pricing.py),
+  // just queried ahead of time so the renter sees the number before
+  // committing.
+  const quoteTokenRef = useRef(0);
+  useEffect(() => {
+    if (!moveIn || !moveOut || moveOut < moveIn) {
+      setPriceQuote(null);
+      return;
+    }
+    const useHoursForQuote = isSingleDay && startTime && endTime && endTime > startTime;
+    const myToken = ++quoteTokenRef.current;
+    const handle = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ move_in: moveIn, move_out: moveOut });
+        if (useHoursForQuote) {
+          params.set("move_in_time", startTime);
+          params.set("move_out_time", endTime);
+        }
+        const res = await fetch(`/api/spaces/${spaceId}/price-quote?` + params.toString());
+        if (myToken !== quoteTokenRef.current) return;
+        if (!res.ok) {
+          setPriceQuote(null);
+          return;
+        }
+        const data = await res.json();
+        setPriceQuote(data.total_price);
+      } catch {
+        if (myToken === quoteTokenRef.current) setPriceQuote(null);
+      }
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [spaceId, moveIn, moveOut, isSingleDay, startTime, endTime]);
+
   useEffect(() => {
     if (initialMoveIn && initialMoveOut) checkAvailability(initialMoveIn, initialMoveOut, "", "");
     // Check immediately on mount if dates were prefilled from search --
@@ -155,6 +191,8 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
     });
 
     if (res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setConfirmedTotal(typeof data.total_price === "number" ? data.total_price : null);
       setSent(true);
     } else {
       setSubmitting(false);
@@ -168,7 +206,18 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
   }
 
   if (sent) {
-    return <p style={{ color: "var(--green-deep)", fontWeight: 600 }}>{t.reservationConfirmed}</p>;
+    return (
+      <div>
+        <p style={{ color: "var(--green-deep)", fontWeight: 600, marginBottom: confirmedTotal != null ? 6 : 0 }}>
+          {t.reservationConfirmed}
+        </p>
+        {confirmedTotal != null && (
+          <p style={{ color: "var(--ink-muted)", fontSize: 14 }}>
+            {t.totalPriceLabel}: {confirmedTotal.toFixed(2)} €
+          </p>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -235,6 +284,23 @@ export default function BookingForm({ spaceId, lang, t, isLoggedIn, initialMoveI
           />
         )}
       </div>
+
+      {priceQuote != null && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: 14,
+            fontWeight: 600,
+            padding: "10px 0",
+            borderTop: "1px solid var(--border)",
+            marginBottom: 12,
+          }}
+        >
+          <span style={{ fontWeight: 400, color: "var(--ink-muted)" }}>{t.priceQuoteLabel}</span>
+          <span>{priceQuote.toFixed(2)} €</span>
+        </div>
+      )}
 
       <button type="submit" className="btn-primary" style={{ width: "100%" }} disabled={submitting}>
         {t.reserveNow}

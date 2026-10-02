@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Lang, Translator } from "@/lib/translations";
 import type { BookingDetail, Space } from "@/lib/types";
+import { formatHeadlinePrice } from "@/lib/pricing";
 import BookingDetailModal from "./BookingDetailModal";
 
 type Props = { lang: Lang; t: Translator };
@@ -68,12 +69,14 @@ export default function DashboardContent({ lang, t }: Props) {
     setSaved((prev) => (prev ? prev.filter((s) => s.id !== spaceId) : prev));
   }
 
-  const priceById = new Map((listings || []).map((s) => [s.id, s.price_month]));
   const now = new Date();
   const activeListings = (listings || []).filter((s) => s.is_active && s.status === "approved").length;
   const upcomingBookings = (received || []).filter(
     (b) => (b.status === "confirmed" || b.status === "accepted") && new Date(b.move_in_date) >= now
   ).length;
+  // Sums each booking's actual agreed total_price (see app/pricing.py)
+  // rather than the space's list price, so a 3-day booking doesn't get
+  // counted as a full month of revenue.
   const revenueMonth = (received || [])
     .filter((b) => {
       if (b.status !== "confirmed" && b.status !== "accepted") return false;
@@ -81,7 +84,7 @@ export default function DashboardContent({ lang, t }: Props) {
       const end = new Date(b.move_out_date);
       return start <= now && end >= new Date(now.getFullYear(), now.getMonth(), 1);
     })
-    .reduce((sum, b) => sum + (priceById.get(b.space_id) || 0), 0);
+    .reduce((sum, b) => sum + (b.total_price || 0), 0);
 
   return (
     <>
@@ -125,7 +128,7 @@ export default function DashboardContent({ lang, t }: Props) {
                     <div className="info">
                       <div className="title">{s.title}</div>
                       <div className="meta">
-                        {s.city} · {Number(s.price_month).toFixed(0)} € / {t.perMonth}
+                        {s.city} · {formatHeadlinePrice(s, t)}
                       </div>
                     </div>
                   </a>
@@ -258,7 +261,7 @@ export default function DashboardContent({ lang, t }: Props) {
                   <div className="info">
                     <div className="title">{s.title}</div>
                     <div className="meta">
-                      {s.city} · {Number(s.price_month).toFixed(0)} € / {t.perMonth}
+                      {s.city} · {formatHeadlinePrice(s, t)}
                     </div>
                   </div>
                 </a>

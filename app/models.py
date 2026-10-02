@@ -85,7 +85,15 @@ class Space(Base):
     # when an address is saved, to enable real "within N km" radius search.
     latitude: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
     longitude: Mapped[float | None] = mapped_column(Numeric(9, 6), nullable=True)
-    price_month: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    # All four optional -- a host sets whichever periods make sense for
+    # their space (at least one required, enforced in schemas.SpaceCreate).
+    # See app/pricing.py for how a booking's total is priced when the
+    # stay doesn't cleanly match a single tier, or when a tier the renter's
+    # period needs wasn't set by the host.
+    price_hour: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    price_day: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    price_week: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
+    price_month: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     size_sqm: Mapped[float | None] = mapped_column(Numeric(8, 2), nullable=True)
     # Host-controlled pause/resume, independent of moderation status --
     # a listing can be approved but paused, or pending review and paused.
@@ -137,6 +145,12 @@ class Booking(Base):
     # Optional free-text note when the renter wants a period different from
     # what they searched for.
     custom_period_note: Mapped[str] = mapped_column(Text, default="")
+    # Computed once at booking creation (see app/pricing.py) and stored
+    # rather than recomputed on every read -- so a booking's price stays
+    # what the renter actually agreed to even if the host changes the
+    # space's prices afterward. Nullable only for bookings created before
+    # this column existed.
+    total_price: Mapped[float | None] = mapped_column(Numeric(10, 2), nullable=True)
     # confirmed/cancelled/blocked. Booking used to go through a host
     # accept/decline step (pending/accepted/declined) -- that's gone, a
     # booking is confirmed the moment it's created (see create_booking in

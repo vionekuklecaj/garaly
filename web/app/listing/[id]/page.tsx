@@ -6,6 +6,7 @@ import ReviewForm from "@/components/ReviewForm";
 import { getPageContext, backendGet } from "@/lib/session";
 import { AMENITY_KEYS, type AmenityKey, type Review, type Space } from "@/lib/types";
 import type { Translator } from "@/lib/translations";
+import { formatPriceTiers } from "@/lib/pricing";
 
 type SP = { lang?: string; move_in?: string; move_out?: string; review?: string };
 
@@ -46,6 +47,7 @@ export default async function ListingDetailPage({
   const loginHref = `/login?lang=${lang}&next=/listing/${id}`;
 
   const amenities = (space?.amenities || []).filter((a): a is AmenityKey => (AMENITY_KEYS as readonly string[]).includes(a));
+  const priceTiers = space ? formatPriceTiers(space) : [];
 
   return (
     <PageShell lang={lang} user={user} t={t}>
@@ -174,9 +176,21 @@ export default async function ListingDetailPage({
                 </div>
 
                 <div className="booking-card reveal">
-                  <div className="booking-price">
-                    {Math.trunc(space.price_month)} € <span className="unit">/ {t.perMonth}</span>
-                  </div>
+                  {priceTiers.length > 0 && (
+                    <>
+                      <div className="booking-price">
+                        {Math.trunc(priceTiers[0].amount)} € <span className="unit">/ {t[priceTiers[0].unit]}</span>
+                      </div>
+                      {priceTiers.length > 1 && (
+                        <div className="price-tier-extra">
+                          {priceTiers
+                            .slice(1)
+                            .map((tier) => `${Math.trunc(tier.amount)} € / ${t[tier.unit]}`)
+                            .join(" · ")}
+                        </div>
+                      )}
+                    </>
+                  )}
                   {isOwner ? (
                     <>
                       <div

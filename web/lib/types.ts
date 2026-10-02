@@ -52,7 +52,13 @@ export type Space = {
   amenities: string[];
   latitude: number | null;
   longitude: number | null;
-  price_month: number;
+  // All four optional -- a host sets whichever periods make sense for
+  // their space (at least one required). See lib/pricing.ts for how the
+  // "headline" price shown on a card is picked when several are set.
+  price_hour: number | null;
+  price_day: number | null;
+  price_week: number | null;
+  price_month: number | null;
   size_sqm: number | null;
   is_active: boolean;
   status: SpaceStatus;
@@ -92,6 +98,9 @@ export type Booking = {
   move_out_time?: string | null;
   custom_period_note: string;
   status: BookingStatus;
+  // Computed and stored once at booking creation -- see app/pricing.py.
+  // Null only for bookings made before this field existed.
+  total_price: number | null;
   created_at: string;
 };
 

@@ -5,6 +5,7 @@ import { CATEGORIES, type Lang, type Translator } from "@/lib/translations";
 import type { AmenityKey } from "@/lib/types";
 import { lookupCityForZip } from "@/lib/zipLookup";
 import AmenitiesPicker from "./AmenitiesPicker";
+import PricingFields, { hasAnyPriceTier, priceTierPayload, type PricingValues } from "./PricingFields";
 
 type Props = {
   lang: Lang;
@@ -40,7 +41,7 @@ export default function ListSpaceForm({ lang, t }: Props) {
     };
   }, [zipCode]);
   const [amenities, setAmenities] = useState<AmenityKey[]>([]);
-  const [priceMonth, setPriceMonth] = useState("");
+  const [pricing, setPricing] = useState<PricingValues>({ priceHour: "", priceDay: "", priceWeek: "", priceMonth: "" });
   const [sizeSqm, setSizeSqm] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -49,6 +50,11 @@ export default function ListSpaceForm({ lang, t }: Props) {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
+
+    if (!hasAnyPriceTier(pricing)) {
+      setError(t.pricingTiersNote);
+      return;
+    }
     setSubmitting(true);
 
     const res = await fetch("/api/spaces", {
@@ -62,7 +68,7 @@ export default function ListSpaceForm({ lang, t }: Props) {
         address,
         zip_code: zipCode,
         amenities,
-        price_month: parseFloat(priceMonth),
+        ...priceTierPayload(pricing),
         size_sqm: sizeSqm ? parseFloat(sizeSqm) : null,
       }),
     });
@@ -143,10 +149,7 @@ export default function ListSpaceForm({ lang, t }: Props) {
         <label>{t.fieldAddress}</label>
         <input type="text" placeholder={t.fieldAddressPh} value={address} onChange={(e) => setAddress(e.target.value)} />
       </div>
-      <div className="field">
-        <label>{t.fieldPrice}</label>
-        <input type="number" min={1} step={1} required value={priceMonth} onChange={(e) => setPriceMonth(e.target.value)} />
-      </div>
+      <PricingFields t={t} values={pricing} onChange={setPricing} />
       <div className="field">
         <label>{t.fieldSize}</label>
         <input type="number" min={1} step={1} value={sizeSqm} onChange={(e) => setSizeSqm(e.target.value)} />

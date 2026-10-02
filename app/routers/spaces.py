@@ -1,4 +1,5 @@
 from datetime import date, time
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import func, select
@@ -9,16 +10,25 @@ from app.auth import get_current_user, get_current_user_optional
 from app.availability import BLOCKING_STATUSES, has_conflicting_booking
 from app.database import get_db
 from app.models import Booking, Review, Space, User
+from app.pricing import price_for_period
 from app.schemas import (
     AvailabilityOut,
     BlockDatesCreate,
     BookingOut,
+    PriceQuoteOut,
     ReviewOut,
     SpaceCreate,
     SpaceOut,
     SpaceUpdate,
     UnavailableRangeOut,
 )
+
+
+def _as_decimal(value) -> Decimal | None:
+    """Numeric columns come back as float from SQLite (local dev) but
+    Decimal from Postgres (prod) -- normalize to Decimal via str() to avoid
+    binary-float imprecision either way."""
+    return None if value is None else Decimal(str(value))
 
 router = APIRouter(prefix="/api/spaces", tags=["spaces"])
 
@@ -155,6 +165,40 @@ async def check_availability(
     return AvailabilityOut(available=not conflict)
 
 
+@router.get("/{space_id}/price-quote", response_model=PriceQuoteOut)
+async def price_quote(
+    space_id: str,
+    move_in: date = Query(...),
+    move_out: date = Query(...),
+    move_in_time: time | None = Query(default=None),
+    move_out_time: time | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+):
+    """Live total-price preview as the renter picks dates/hours, before a
+    booking exists -- uses the same pricing math create_booking stores on
+    the actual Booking row (see app/pricing.py)."""
+    if move_out < move_in:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="move_out must be on or after move_in")
+    if (move_in_time is None) != (move_out_time is None):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="move_in_time and move_out_time must be set together")
+
+    space = await db.get(Space, space_id)
+    if space is None or not space.is_active:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Space not found")
+
+    total = price_for_period(
+        _as_decimal(space.price_hour),
+        _as_decimal(space.price_day),
+        _as_decimal(space.price_week),
+        _as_decimal(space.price_month),
+        move_in_date=move_in,
+        move_out_date=move_out,
+        move_in_time=move_in_time,
+        move_out_time=move_out_time,
+    )
+    return PriceQuoteOut(total_price=float(total))
+
+
 @router.get("/{space_id}/unavailable-dates", response_model=list[UnavailableRangeOut])
 async def list_unavailable_dates(space_id: str, db: AsyncSession = Depends(get_db)):
     """Every full-day booked/blocked range for this space, from today
@@ -221,6 +265,15 @@ async def update_space(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid category")
     if "amenities" in updates:
         updates["amenities"] = ",".join(updates["amenities"])
+
+    price_keys = ("price_hour", "price_day", "price_week", "price_month")
+    if any(k in updates for k in price_keys):
+        resulting = {k: updates.get(k, getattr(space, k)) for k in price_keys}
+        if all(v is None for v in resulting.values()):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Set at least one of price_hour, price_day, price_week, price_month",
+            )
 
     for key, value in updates.items():
         setattr(space, key, value)

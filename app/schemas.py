@@ -67,6 +67,11 @@ def _validate_amenities(keys: list[str]) -> list[str]:
     return [k for k in AMENITY_KEYS if k in keys]
 
 
+def _require_one_price_tier(hour, day, week, month):
+    if hour is None and day is None and week is None and month is None:
+        raise ValueError("Set at least one of price_hour, price_day, price_week, price_month")
+
+
 class SpaceCreate(BaseModel):
     title: str = Field(min_length=3, max_length=160)
     description: str = ""
@@ -75,13 +80,21 @@ class SpaceCreate(BaseModel):
     address: str = ""
     zip_code: str = Field(default="", max_length=20)
     amenities: list[str] = Field(default_factory=list)
-    price_month: float = Field(gt=0)
+    price_hour: float | None = Field(default=None, gt=0)
+    price_day: float | None = Field(default=None, gt=0)
+    price_week: float | None = Field(default=None, gt=0)
+    price_month: float | None = Field(default=None, gt=0)
     size_sqm: float | None = Field(default=None, gt=0)
 
     @field_validator("amenities")
     @classmethod
     def _check_amenities(cls, v: list[str]) -> list[str]:
         return _validate_amenities(v)
+
+    @model_validator(mode="after")
+    def _check_price_tiers(self):
+        _require_one_price_tier(self.price_hour, self.price_day, self.price_week, self.price_month)
+        return self
 
 
 class SpaceUpdate(BaseModel):
@@ -97,6 +110,9 @@ class SpaceUpdate(BaseModel):
     address: str | None = None
     zip_code: str | None = Field(default=None, max_length=20)
     amenities: list[str] | None = None
+    price_hour: float | None = Field(default=None, gt=0)
+    price_day: float | None = Field(default=None, gt=0)
+    price_week: float | None = Field(default=None, gt=0)
     price_month: float | None = Field(default=None, gt=0)
     size_sqm: float | None = Field(default=None, gt=0)
     is_active: bool | None = None
@@ -121,7 +137,10 @@ class SpaceOut(BaseModel):
     amenities: list[str] = Field(default_factory=list)
     latitude: float | None = None
     longitude: float | None = None
-    price_month: float
+    price_hour: float | None = None
+    price_day: float | None = None
+    price_week: float | None = None
+    price_month: float | None = None
     size_sqm: float | None
     is_active: bool
     status: str = "approved"
@@ -198,6 +217,7 @@ class BookingOut(BaseModel):
     move_out_time: time | None = None
     custom_period_note: str
     status: str
+    total_price: float | None = None
     created_at: datetime
 
 
@@ -231,6 +251,10 @@ class BlockDatesCreate(BaseModel):
 
 class AvailabilityOut(BaseModel):
     available: bool
+
+
+class PriceQuoteOut(BaseModel):
+    total_price: float
 
 
 class UnavailableRangeOut(BaseModel):

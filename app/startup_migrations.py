@@ -34,6 +34,13 @@ _STATEMENTS = [
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN DEFAULT false",
     "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS move_in_time TIME",
     "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS move_out_time TIME",
+    "ALTER TABLE spaces ADD COLUMN IF NOT EXISTS price_hour NUMERIC(10, 2)",
+    "ALTER TABLE spaces ADD COLUMN IF NOT EXISTS price_day NUMERIC(10, 2)",
+    "ALTER TABLE spaces ADD COLUMN IF NOT EXISTS price_week NUMERIC(10, 2)",
+    # price_month used to be required; now it's one of four optional tiers
+    # (a space just needs at least one of the four set).
+    "ALTER TABLE spaces ALTER COLUMN price_month DROP NOT NULL",
+    "ALTER TABLE bookings ADD COLUMN IF NOT EXISTS total_price NUMERIC(10, 2)",
 ]
 
 

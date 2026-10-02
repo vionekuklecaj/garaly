@@ -1,4 +1,5 @@
 from datetime import date, timezone, datetime
+from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
@@ -8,9 +9,30 @@ from app.auth import get_current_user
 from app.availability import has_conflicting_booking
 from app.database import get_db
 from app.models import Booking, Review, Space, User
+from app.pricing import price_for_period
 from app.schemas import BookingCreate, BookingDetailOut, BookingOut
 
 router = APIRouter(prefix="/api/bookings", tags=["bookings"])
+
+
+def _as_decimal(value) -> Decimal | None:
+    """Numeric columns come back as float from SQLite (local dev) but
+    Decimal from Postgres (prod) -- normalize to Decimal via str() to avoid
+    binary-float imprecision either way."""
+    return None if value is None else Decimal(str(value))
+
+
+def _price_booking(space: Space, data: BookingCreate) -> Decimal:
+    return price_for_period(
+        _as_decimal(space.price_hour),
+        _as_decimal(space.price_day),
+        _as_decimal(space.price_week),
+        _as_decimal(space.price_month),
+        move_in_date=data.move_in_date,
+        move_out_date=data.move_out_date,
+        move_in_time=data.move_in_time,
+        move_out_time=data.move_out_time,
+    )
 
 
 @router.post("", response_model=BookingOut, status_code=status.HTTP_201_CREATED)
@@ -50,6 +72,7 @@ async def create_booking(
         move_out_time=data.move_out_time,
         custom_period_note=data.custom_period_note,
         status="confirmed",
+        total_price=_price_booking(space, data),
     )
     db.add(booking)
     await db.commit()

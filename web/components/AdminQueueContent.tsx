@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Lang, Translator } from "@/lib/translations";
 import type { AdminSpace } from "@/lib/types";
+import { formatHeadlinePrice } from "@/lib/pricing";
 
 type Props = { lang: Lang; t: Translator };
 
@@ -57,7 +58,7 @@ export default function AdminQueueContent({ lang, t }: Props) {
                 {s.owner_name} ({s.owner_email})
               </div>
               <div className="meta">
-                {s.category} · {Number(s.price_month).toFixed(0)} € / {t.perMonth}
+                {s.category} · {formatHeadlinePrice(s, t)}
               </div>
             </div>
             <span className="status-badge pending">{t.statusPendingReview}</span>

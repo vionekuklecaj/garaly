@@ -86,6 +86,13 @@ export default function BookingDetailModal({ booking, lang, t, showRenterInfo, o
           </div>
         )}
 
+        {booking.total_price != null && (
+          <div className="modal-field">
+            <span className="modal-label">{t.totalPriceLabel}</span>
+            <span>{booking.total_price.toFixed(2)} €</span>
+          </div>
+        )}
+
         <div className="modal-field">
           <span className="modal-label">{t.statusLabel}</span>
           <span>{badge.label}</span>

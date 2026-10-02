@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CATEGORIES, type Lang, type Translator } from "@/lib/translations";
 import type { Space, SpaceListResponse } from "@/lib/types";
+import { headlinePrice } from "@/lib/pricing";
 
 type Props = {
   lang: Lang;
@@ -90,28 +91,34 @@ export default function SearchResults({ lang, t, city, activeCategory, moveIn, m
         </div>
       ) : (
         <div className="listing-grid">
-          {items.map((space) => (
-            <div key={space.id} className="listing-card" onClick={() => (window.location.href = listingHref(space))}>
-              <div className="photo-wrap">
-                <div className="photo">{space.category.toUpperCase()} PHOTO</div>
-                <div className="badge-category">{catLabel(space.category)}</div>
-                <div className="badge-save" onClick={(e) => e.stopPropagation()}>
-                  ♡
-                </div>
-              </div>
-              <div className="body">
-                <div className="title">{space.title}</div>
-                <div className="loc">{space.city}</div>
-                <div className="price-row">
-                  <div className="price">
-                    {Number(space.price_month).toFixed(0)} €{" "}
-                    <span style={{ fontWeight: 400, color: "var(--ink-muted)" }}>/ {t.perMonth}</span>
+          {items.map((space) => {
+            const hp = headlinePrice(space);
+            return (
+              <div key={space.id} className="listing-card" onClick={() => (window.location.href = listingHref(space))}>
+                <div className="photo-wrap">
+                  <div className="photo">{space.category.toUpperCase()} PHOTO</div>
+                  <div className="badge-category">{catLabel(space.category)}</div>
+                  <div className="badge-save" onClick={(e) => e.stopPropagation()}>
+                    ♡
                   </div>
-                  <div className="rating">★ 4.8</div>
+                </div>
+                <div className="body">
+                  <div className="title">{space.title}</div>
+                  <div className="loc">{space.city}</div>
+                  <div className="price-row">
+                    {hp && (
+                      <div className="price">
+                        <span style={{ fontWeight: 400, color: "var(--ink-muted)" }}>{t.fromPricePrefix} </span>
+                        {Number(hp.amount).toFixed(0)} €{" "}
+                        <span style={{ fontWeight: 400, color: "var(--ink-muted)" }}>/ {t[hp.unit]}</span>
+                      </div>
+                    )}
+                    <div className="rating">★ 4.8</div>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </>

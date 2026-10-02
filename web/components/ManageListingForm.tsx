@@ -5,6 +5,7 @@ import { CATEGORIES, type Lang, type Translator } from "@/lib/translations";
 import type { AmenityKey, Booking, Space, SpaceImage } from "@/lib/types";
 import { lookupCityForZip } from "@/lib/zipLookup";
 import AmenitiesPicker from "./AmenitiesPicker";
+import PricingFields, { hasAnyPriceTier, priceTierPayload, type PricingValues } from "./PricingFields";
 
 type Props = { lang: Lang; t: Translator; space: Space };
 
@@ -46,7 +47,12 @@ export default function ManageListingForm({ lang, t, space: initial }: Props) {
     };
   }, [zipCode]);
   const [amenities, setAmenities] = useState<AmenityKey[]>(initial.amenities as AmenityKey[]);
-  const [priceMonth, setPriceMonth] = useState(String(initial.price_month));
+  const [pricing, setPricing] = useState<PricingValues>({
+    priceHour: initial.price_hour != null ? String(initial.price_hour) : "",
+    priceDay: initial.price_day != null ? String(initial.price_day) : "",
+    priceWeek: initial.price_week != null ? String(initial.price_week) : "",
+    priceMonth: initial.price_month != null ? String(initial.price_month) : "",
+  });
   const [sizeSqm, setSizeSqm] = useState(initial.size_sqm ? String(initial.size_sqm) : "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -70,9 +76,14 @@ export default function ManageListingForm({ lang, t, space: initial }: Props) {
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
-    setSaving(true);
     setError("");
     setSaved(false);
+
+    if (!hasAnyPriceTier(pricing)) {
+      setError(t.pricingTiersNote);
+      return;
+    }
+    setSaving(true);
 
     const res = await fetch(`/api/spaces/${space.id}`, {
       method: "PATCH",
@@ -85,7 +96,7 @@ export default function ManageListingForm({ lang, t, space: initial }: Props) {
         address,
         zip_code: zipCode,
         amenities,
-        price_month: parseFloat(priceMonth),
+        ...priceTierPayload(pricing),
         size_sqm: sizeSqm ? parseFloat(sizeSqm) : null,
       }),
     });
@@ -204,13 +215,11 @@ export default function ManageListingForm({ lang, t, space: initial }: Props) {
           <input type="text" value={address} onChange={(e) => setAddress(e.target.value)} />
         </div>
         <div className="field">
-          <label>{t.fieldPrice}</label>
-          <input type="number" min={1} step={1} required value={priceMonth} onChange={(e) => setPriceMonth(e.target.value)} />
-        </div>
-        <div className="field">
           <label>{t.fieldSize}</label>
           <input type="number" min={1} step={1} value={sizeSqm} onChange={(e) => setSizeSqm(e.target.value)} />
         </div>
+
+        <PricingFields t={t} values={pricing} onChange={setPricing} />
 
         <AmenitiesPicker value={amenities} onChange={setAmenities} t={t} />
 
