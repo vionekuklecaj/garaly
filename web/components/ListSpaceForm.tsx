@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CATEGORIES, type Lang, type Translator } from "@/lib/translations";
 import type { AmenityKey } from "@/lib/types";
+import { lookupCityForZip } from "@/lib/zipLookup";
 import AmenitiesPicker from "./AmenitiesPicker";
 
 type Props = {
@@ -17,6 +18,27 @@ export default function ListSpaceForm({ lang, t }: Props) {
   const [city, setCity] = useState("");
   const [address, setAddress] = useState("");
   const [zipCode, setZipCode] = useState("");
+  // Tracks the city value we last auto-filled, so a later zip lookup only
+  // overwrites city if the host hasn't since typed their own value over it.
+  const autoFilledCityRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!/^\d{5}$/.test(zipCode)) return;
+    let cancelled = false;
+    lookupCityForZip(zipCode).then((found) => {
+      if (cancelled || !found) return;
+      setCity((current) => {
+        if (current === "" || current === autoFilledCityRef.current) {
+          autoFilledCityRef.current = found;
+          return found;
+        }
+        return current;
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [zipCode]);
   const [amenities, setAmenities] = useState<AmenityKey[]>([]);
   const [priceMonth, setPriceMonth] = useState("");
   const [sizeSqm, setSizeSqm] = useState("");
@@ -110,12 +132,12 @@ export default function ListSpaceForm({ lang, t }: Props) {
         </select>
       </div>
       <div className="field">
-        <label>{t.fieldCity}</label>
-        <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} />
-      </div>
-      <div className="field">
         <label>{t.fieldZip}</label>
         <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} />
+      </div>
+      <div className="field">
+        <label>{t.fieldCity}</label>
+        <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} />
       </div>
       <div className="field">
         <label>{t.fieldAddress}</label>

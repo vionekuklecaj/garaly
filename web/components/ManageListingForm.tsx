@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { CATEGORIES, type Lang, type Translator } from "@/lib/translations";
 import type { AmenityKey, Booking, Space, SpaceImage } from "@/lib/types";
+import { lookupCityForZip } from "@/lib/zipLookup";
 import AmenitiesPicker from "./AmenitiesPicker";
 
 type Props = { lang: Lang; t: Translator; space: Space };
@@ -15,6 +16,35 @@ export default function ManageListingForm({ lang, t, space: initial }: Props) {
   const [city, setCity] = useState(initial.city);
   const [address, setAddress] = useState(initial.address);
   const [zipCode, setZipCode] = useState(initial.zip_code);
+  // Tracks the city value we last auto-filled, so a later zip lookup only
+  // overwrites city if the host hasn't since typed their own value over it.
+  const autoFilledCityRef = useRef<string | null>(null);
+  // Skips the lookup on mount -- otherwise an existing listing's already-set
+  // (possibly custom-spelled) city would get silently overwritten just by
+  // opening the edit page, since its zip is already a valid 5 digits.
+  const skippedFirstZipEffectRef = useRef(false);
+
+  useEffect(() => {
+    if (!skippedFirstZipEffectRef.current) {
+      skippedFirstZipEffectRef.current = true;
+      return;
+    }
+    if (!/^\d{5}$/.test(zipCode)) return;
+    let cancelled = false;
+    lookupCityForZip(zipCode).then((found) => {
+      if (cancelled || !found) return;
+      setCity((current) => {
+        if (current === "" || current === autoFilledCityRef.current) {
+          autoFilledCityRef.current = found;
+          return found;
+        }
+        return current;
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [zipCode]);
   const [amenities, setAmenities] = useState<AmenityKey[]>(initial.amenities as AmenityKey[]);
   const [priceMonth, setPriceMonth] = useState(String(initial.price_month));
   const [sizeSqm, setSizeSqm] = useState(initial.size_sqm ? String(initial.size_sqm) : "");
@@ -162,12 +192,12 @@ export default function ManageListingForm({ lang, t, space: initial }: Props) {
           </select>
         </div>
         <div className="field">
-          <label>{t.fieldCity}</label>
-          <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} />
-        </div>
-        <div className="field">
           <label>{t.fieldZip}</label>
           <input type="text" value={zipCode} onChange={(e) => setZipCode(e.target.value)} />
+        </div>
+        <div className="field">
+          <label>{t.fieldCity}</label>
+          <input type="text" required value={city} onChange={(e) => setCity(e.target.value)} />
         </div>
         <div className="field">
           <label>{t.fieldAddress}</label>
