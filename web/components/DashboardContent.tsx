@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import type { Lang, Translator } from "@/lib/translations";
 import type { BookingDetail, Space } from "@/lib/types";
+import BookingDetailModal from "./BookingDetailModal";
 
 type Props = { lang: Lang; t: Translator };
 
@@ -31,6 +32,7 @@ export default function DashboardContent({ lang, t }: Props) {
   const [myBookings, setMyBookings] = useState<BookingDetail[] | null>(null);
   const [received, setReceived] = useState<BookingDetail[] | null>(null);
   const [saved, setSaved] = useState<Space[] | null>(null);
+  const [selected, setSelected] = useState<{ booking: BookingDetail; showRenterInfo: boolean } | null>(null);
 
   async function loadAll() {
     const [l, mb, rb, sv] = await Promise.all([
@@ -162,7 +164,11 @@ export default function DashboardContent({ lang, t }: Props) {
                 const badge = bookingBadge(b.status, t);
                 const canCancel = (b.status === "confirmed" || b.status === "accepted") && !b.is_past;
                 return (
-                  <div key={b.id} className="request-card">
+                  <div
+                    key={b.id}
+                    className="request-card clickable"
+                    onClick={() => setSelected({ booking: b, showRenterInfo: false })}
+                  >
                     <div className="row1">
                       <div>
                         <div className="title">
@@ -176,12 +182,16 @@ export default function DashboardContent({ lang, t }: Props) {
                     </div>
                     <div className="actions">
                       {canCancel && (
-                        <button className="btn-decline" onClick={() => cancelBooking(b.id)}>
+                        <button className="btn-decline" onClick={(e) => { e.stopPropagation(); cancelBooking(b.id); }}>
                           {t.cancelReservation}
                         </button>
                       )}
                       {b.can_review && (
-                        <a className="btn-accept" href={`/listing/${b.space_id}?lang=${lang}&review=${b.id}`}>
+                        <a
+                          className="btn-accept"
+                          href={`/listing/${b.space_id}?lang=${lang}&review=${b.id}`}
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           {t.leaveReview}
                         </a>
                       )}
@@ -204,7 +214,11 @@ export default function DashboardContent({ lang, t }: Props) {
               received.map((b) => {
                 const badge = bookingBadge(b.status, t);
                 return (
-                  <div key={b.id} className="request-card">
+                  <div
+                    key={b.id}
+                    className="request-card clickable"
+                    onClick={() => setSelected({ booking: b, showRenterInfo: true })}
+                  >
                     <div className="row1">
                       <div>
                         <div className="title">
@@ -274,6 +288,16 @@ export default function DashboardContent({ lang, t }: Props) {
             </div>
           </div>
         </div>
+      )}
+
+      {selected && (
+        <BookingDetailModal
+          booking={selected.booking}
+          lang={lang}
+          t={t}
+          showRenterInfo={selected.showRenterInfo}
+          onClose={() => setSelected(null)}
+        />
       )}
     </>
   );

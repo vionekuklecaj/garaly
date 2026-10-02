@@ -438,6 +438,33 @@ button { font-family: inherit; }
 .btn-decline { background: #fff; color: #b3261e; border: 1px solid #f3c9c4; font-weight: 600; cursor: pointer; }
 .btn-accept { background: var(--green); color: var(--btn-text-on-green); border: none; font-weight: 700; cursor: pointer; }
 
+.request-card.clickable { cursor: pointer; transition: box-shadow 0.2s ease, border-color 0.2s ease; }
+.request-card.clickable:hover { box-shadow: var(--shadow-search); border-color: rgba(34,197,94,0.3); }
+
+/* ---------- Booking detail modal ---------- */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(15, 25, 20, 0.45);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px; z-index: 200;
+}
+.modal-card {
+  width: 100%; max-width: 440px; max-height: 85vh; overflow-y: auto;
+  background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius-card);
+  box-shadow: var(--shadow-search); padding: 24px;
+}
+.modal-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.modal-head h2 { margin: 0; font-size: 20px; }
+.modal-close {
+  background: none; border: none; cursor: pointer; font-size: 16px; line-height: 1;
+  color: var(--ink-muted); padding: 4px; flex: none;
+}
+.modal-close:hover { color: var(--ink); }
+.modal-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 16px; }
+.modal-row .title { font-weight: 600; font-size: 15px; }
+.modal-field { display: flex; justify-content: space-between; gap: 16px; font-size: 13.5px; padding: 10px 0; border-top: 1px solid var(--border); }
+.modal-label { color: var(--ink-muted); flex: none; }
+.modal-field span:last-child { text-align: right; }
+
 /* ---------- About / Team ---------- */
 .team-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 .team-card {
