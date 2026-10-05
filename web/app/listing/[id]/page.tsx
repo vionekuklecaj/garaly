@@ -167,7 +167,7 @@ export default async function ListingDetailPage({
                   <div className="map-caption">{t.mapApprox}</div>
 
                   {sp.review && user && (
-                    <div style={{ marginTop: 32 }}>
+                    <div id="review-form" style={{ marginTop: 32, scrollMarginTop: 100 }}>
                       <ReviewForm bookingId={sp.review} lang={lang} t={t} />
                     </div>
                   )}

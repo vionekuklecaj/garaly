@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import type { Lang, Translator } from "@/lib/translations";
 import type { BookingDetail } from "@/lib/types";
+import MessageRenterButton from "./MessageRenterButton";
 
 type Props = {
   booking: BookingDetail;
@@ -102,6 +103,10 @@ export default function BookingDetailModal({ booking, lang, t, showRenterInfo, o
           <span className="modal-label">{t.bookedOnLabel}</span>
           <span>{formatDateTime(lang, booking.created_at)}</span>
         </div>
+
+        {showRenterInfo && booking.status !== "cancelled" && (
+          <MessageRenterButton spaceId={booking.space_id} renterId={booking.renter_id} lang={lang} t={t} />
+        )}
 
         <a className="btn-secondary" style={{ display: "block", textAlign: "center", marginTop: 16 }} href={`/listing/${booking.space_id}?lang=${lang}`}>
           {t.viewFullListing}

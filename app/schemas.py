@@ -291,6 +291,10 @@ class ReviewOut(BaseModel):
 
 class ConversationStart(BaseModel):
     space_id: str
+    # Required only when the caller is the space's own host -- identifies
+    # which renter to message (a host has no "self" conversation the way a
+    # renter messaging a host does). Ignored for a renter-initiated start.
+    renter_id: str | None = None
 
 
 class ConversationOut(BaseModel):

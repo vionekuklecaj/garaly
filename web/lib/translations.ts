@@ -170,6 +170,7 @@ export const TRANSLATIONS = {
     "editListing": "Bearbeiten",
     "manageListingTitle": "Anzeige verwalten",
     "saveChanges": "Änderungen speichern",
+    "savingChanges": "Wird gespeichert…",
     "changesSaved": "Änderungen gespeichert.",
     "deactivateListing": "Anzeige deaktivieren",
     "deactivateConfirm": "Diese Anzeige wirklich deaktivieren? Sie ist danach nicht mehr sichtbar.",
@@ -240,6 +241,7 @@ export const TRANSLATIONS = {
     "inboxEmpty": "Noch keine Unterhaltungen.",
     "selectConversation": "Wähle eine Unterhaltung aus.",
     "messageHost": "Host kontaktieren",
+    "messageRenter": "Mieter kontaktieren",
     "messagePlaceholder": "Nachricht schreiben...",
     "sendMessage": "Senden",
     "noMessagesYet": "Noch keine Nachrichten. Schreib die erste!"
@@ -411,6 +413,7 @@ export const TRANSLATIONS = {
     "editListing": "Edit",
     "manageListingTitle": "Manage listing",
     "saveChanges": "Save changes",
+    "savingChanges": "Saving…",
     "changesSaved": "Changes saved.",
     "deactivateListing": "Deactivate listing",
     "deactivateConfirm": "Deactivate this listing? It will no longer be visible.",
@@ -481,6 +484,7 @@ export const TRANSLATIONS = {
     "inboxEmpty": "No conversations yet.",
     "selectConversation": "Select a conversation.",
     "messageHost": "Message host",
+    "messageRenter": "Message renter",
     "messagePlaceholder": "Write a message...",
     "sendMessage": "Send",
     "noMessagesYet": "No messages yet. Say hello!"

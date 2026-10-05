@@ -224,7 +224,7 @@ export default function ManageListingForm({ lang, t, space: initial }: Props) {
         <AmenitiesPicker value={amenities} onChange={setAmenities} t={t} />
 
         <button type="submit" className="btn-primary" style={{ marginTop: 16 }} disabled={saving}>
-          {t.saveChanges}
+          {saving ? t.savingChanges : t.saveChanges}
         </button>
       </form>
 

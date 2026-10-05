@@ -5,28 +5,27 @@ import type { Lang, Translator } from "@/lib/translations";
 
 type Props = {
   spaceId: string;
+  renterId: string;
   lang: Lang;
   t: Translator;
-  isLoggedIn: boolean;
-  loginHref: string;
 };
 
-export default function MessageHostButton({ spaceId, lang, t, isLoggedIn, loginHref }: Props) {
+// Host-side counterpart to MessageHostButton -- lets a host reach out to a
+// renter who's actually booked their space, without waiting for the renter
+// to message first. Backend only allows this once a real booking exists
+// between them (see start_conversation's renter_id branch).
+export default function MessageRenterButton({ spaceId, renterId, lang, t }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   async function onClick() {
-    if (!isLoggedIn) {
-      window.location.href = loginHref;
-      return;
-    }
     setLoading(true);
     setError("");
     try {
       const res = await fetch("/api/conversations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ space_id: spaceId }),
+        body: JSON.stringify({ space_id: spaceId, renter_id: renterId }),
       });
       if (res.ok) {
         const conversation = await res.json();
@@ -42,15 +41,15 @@ export default function MessageHostButton({ spaceId, lang, t, isLoggedIn, loginH
   }
 
   return (
-    <>
+    <div style={{ marginTop: 16 }}>
       <button type="button" className="btn-secondary" style={{ width: "100%" }} onClick={onClick} disabled={loading}>
-        {t.messageHost}
+        {t.messageRenter}
       </button>
       {error && (
         <div className="form-error visible" style={{ marginTop: 10, marginBottom: 0 }}>
           {error}
         </div>
       )}
-    </>
+    </div>
   );
 }

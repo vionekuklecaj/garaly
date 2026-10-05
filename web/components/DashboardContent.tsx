@@ -191,11 +191,11 @@ export default function DashboardContent({ lang, t }: Props) {
                       )}
                       {b.can_review && (
                         <a
-                          className="btn-accept"
-                          href={`/listing/${b.space_id}?lang=${lang}&review=${b.id}`}
+                          className="btn-review"
+                          href={`/listing/${b.space_id}?lang=${lang}&review=${b.id}#review-form`}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {t.leaveReview}
+                          ★ {t.leaveReview}
                         </a>
                       )}
                     </div>

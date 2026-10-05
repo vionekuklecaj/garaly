@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
 from app.database import get_db
-from app.models import Conversation, Message, Space, User
+from app.models import Booking, Conversation, Message, Space, User
 from app.schemas import (
     ConversationOut,
     ConversationStart,
@@ -18,6 +18,11 @@ from app.schemas import (
 
 router = APIRouter(prefix="/api/conversations", tags=["conversations"])
 
+# Same statuses availability.py treats as a "real" (non-cancelled) booking --
+# a host can message a renter once there's an actual reservation between
+# them, not just because the renter viewed the listing.
+_REAL_BOOKING_STATUSES = ("confirmed", "accepted", "pending")
+
 
 @router.post("", response_model=ConversationOut, status_code=status.HTTP_201_CREATED)
 async def start_conversation(
@@ -25,21 +30,48 @@ async def start_conversation(
     user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Find-or-create: a renter messaging about a listing they've already
-    messaged about just reopens the same thread (see the unique constraint
-    on (space_id, renter_id) in models.Conversation)."""
+    """Find-or-create, from either side of the relationship:
+    - A renter messages a host about a (live, bookable) listing -- the
+      original flow, from the listing page's "Message host" button.
+    - A host messages a renter who has an actual booking on one of their
+      listings -- data.renter_id selects which renter, and is required in
+      this direction since a host has no implicit "self" the way a renter
+      messaging a host does.
+    Either way lands in the same thread (see the unique constraint on
+    (space_id, renter_id) in models.Conversation), so whoever reaches out
+    first doesn't matter -- the other side's button just reopens it."""
     space = await db.get(Space, data.space_id)
-    if space is None or not space.is_active or space.status != "approved":
+    if space is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Space not found")
+
     if space.owner_id == user.id:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="You can't message your own listing")
+        if not data.renter_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="renter_id is required to message as the host"
+            )
+        has_booking = await db.execute(
+            select(Booking.id).where(
+                Booking.space_id == data.space_id,
+                Booking.renter_id == data.renter_id,
+                Booking.status.in_(_REAL_BOOKING_STATUSES),
+            )
+        )
+        if has_booking.first() is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND, detail="No booking found for this renter on this listing"
+            )
+        host_id, renter_id = user.id, data.renter_id
+    else:
+        if not space.is_active or space.status != "approved":
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Space not found")
+        host_id, renter_id = space.owner_id, user.id
 
     existing = await db.execute(
-        select(Conversation).where(Conversation.space_id == data.space_id, Conversation.renter_id == user.id)
+        select(Conversation).where(Conversation.space_id == data.space_id, Conversation.renter_id == renter_id)
     )
     conversation = existing.scalar_one_or_none()
     if conversation is None:
-        conversation = Conversation(space_id=data.space_id, host_id=space.owner_id, renter_id=user.id)
+        conversation = Conversation(space_id=data.space_id, host_id=host_id, renter_id=renter_id)
         db.add(conversation)
         await db.commit()
         await db.refresh(conversation)
