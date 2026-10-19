@@ -1,6 +1,13 @@
 fastapi>=0.115.0
 uvicorn[standard]>=0.30.6
 sqlalchemy>=2.0.35
+# SQLAlchemy's async engine (used throughout app/ via AsyncSession) needs
+# this at runtime -- it was never listed explicitly here and only worked
+# by accident wherever pip happened to pull it in transitively, which
+# apparently didn't happen on Render's build (ImportError: "SQLAlchemy
+# asyncio module requires that the Python 'greenlet' library is
+# installed"), crashing the app on startup on every deploy.
+greenlet>=3.1.0
 asyncpg>=0.29.0
 aiosqlite>=0.20.0
 psycopg2-binary>=2.9.9
