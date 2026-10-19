@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Lang, Translator } from "@/lib/translations";
 
 type Props = {
@@ -21,14 +22,14 @@ export default function Footer({ lang, t }: Props) {
           </div>
           <div className="footer-col">
             <h4>{t.footerProduct}</h4>
-            <a href={`/search?lang=${lang}`}>{t.navFind}</a>
-            <a href={`/list-space?lang=${lang}`}>{t.navList}</a>
-            <a href={`/?lang=${lang}#how-it-works`}>{t.navHow}</a>
+            <Link href={`/search?lang=${lang}`}>{t.navFind}</Link>
+            <Link href={`/list-space?lang=${lang}`}>{t.navList}</Link>
+            <Link href={`/?lang=${lang}#how-it-works`}>{t.navHow}</Link>
           </div>
           <div className="footer-col">
             <h4>{t.footerCompany}</h4>
-            <a href={`/about?lang=${lang}`}>{t.navAbout}</a>
-            <a href={`/?lang=${lang}`}>{t.breadcrumbHome}</a>
+            <Link href={`/about?lang=${lang}`}>{t.navAbout}</Link>
+            <Link href={`/?lang=${lang}`}>{t.breadcrumbHome}</Link>
           </div>
           <div className="footer-col">
             <h4>{t.footerLegal}</h4>

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import ManageListingForm from "@/components/ManageListingForm";
 import { getPageContext, backendGet } from "@/lib/session";
@@ -30,7 +31,7 @@ export default async function ManageListingPage({
       <main>
         <div className="container" style={{ paddingTop: 24, paddingBottom: 64 }}>
           <div className="breadcrumb">
-            <a href={`/dashboard?lang=${lang}`}>{t.navDashboard}</a> / {space.title}
+            <Link href={`/dashboard?lang=${lang}`}>{t.navDashboard}</Link> / {space.title}
           </div>
           <h1 className="page-title hfont">{t.manageListingTitle}</h1>
           <ManageListingForm lang={lang} t={t} space={space} />

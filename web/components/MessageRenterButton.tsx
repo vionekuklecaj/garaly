@@ -33,7 +33,11 @@ export default function MessageRenterButton({ spaceId, renterId, lang, t }: Prop
         return;
       }
       const data = await res.json().catch(() => ({}));
-      setError(data.detail || (lang === "de" ? "Etwas ist schiefgelaufen." : "Something went wrong."));
+      // See MessageHostButton's matching comment -- a bare "Not Found" here
+      // means the backend doesn't have this endpoint deployed yet, not a
+      // real app-level 404, so show the generic message instead.
+      const detail = res.status === 404 && data.detail === "Not Found" ? null : data.detail;
+      setError(detail || (lang === "de" ? "Etwas ist schiefgelaufen." : "Something went wrong."));
     } catch {
       setError(lang === "de" ? "Etwas ist schiefgelaufen." : "Something went wrong.");
     }

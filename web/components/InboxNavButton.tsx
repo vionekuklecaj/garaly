@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import type { Lang, Translator } from "@/lib/translations";
 
 type Props = { lang: Lang; t: Translator };
@@ -33,9 +34,9 @@ export default function InboxNavButton({ lang, t }: Props) {
   }, []);
 
   return (
-    <a className="inbox-nav-btn" href={`/inbox?lang=${lang}`} aria-label={t.navInbox}>
+    <Link className="inbox-nav-btn" href={`/inbox?lang=${lang}`} aria-label={t.navInbox}>
       💬
       {count > 0 && <span className="inbox-nav-badge">{count > 9 ? "9+" : count}</span>}
-    </a>
+    </Link>
   );
 }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import CategoryCarousel from "@/components/CategoryCarousel";
 import { getPageContext, backendGet } from "@/lib/session";
@@ -184,9 +185,9 @@ export default async function LandingPage({
             <div className="cta-band" style={{ maxWidth: 900 }}>
               <h2 className="hfont">{t.ctaTitle}</h2>
               <p>{t.ctaSub}</p>
-              <a className="btn-primary" style={{ display: "inline-block" }} href={`/list-space?lang=${lang}`}>
+              <Link className="btn-primary" style={{ display: "inline-block" }} href={`/list-space?lang=${lang}`}>
                 {t.ctaBtn}
-              </a>
+              </Link>
             </div>
           </div>
         </section>

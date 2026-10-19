@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { CATEGORIES, type Lang, type Translator } from "@/lib/translations";
 import type { Space, SpaceListResponse } from "@/lib/types";
 import { headlinePrice } from "@/lib/pricing";
@@ -20,6 +21,7 @@ type Props = {
 // category filter + the listing grid it filters, fetching from the same
 // /api/spaces endpoint (proxied through to FastAPI).
 export default function SearchResults({ lang, t, city, activeCategory, moveIn, moveOut, radius }: Props) {
+  const router = useRouter();
   const [category, setCategory] = useState(activeCategory || "all");
   const [items, setItems] = useState<Space[]>([]);
   const [total, setTotal] = useState<number | null>(null);
@@ -95,7 +97,7 @@ export default function SearchResults({ lang, t, city, activeCategory, moveIn, m
           {items.map((space) => {
             const hp = headlinePrice(space);
             return (
-              <div key={space.id} className="listing-card" onClick={() => (window.location.href = listingHref(space))}>
+              <div key={space.id} className="listing-card" onClick={() => router.push(listingHref(space))}>
                 <div className="photo-wrap">
                   <div className="photo">{space.category.toUpperCase()} PHOTO</div>
                   <div className="badge-category">{catLabel(space.category)}</div>

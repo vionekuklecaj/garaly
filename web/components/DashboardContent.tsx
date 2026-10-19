@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Lang, Translator } from "@/lib/translations";
 import type { BookingDetail, Space } from "@/lib/types";
 import { formatHeadlinePrice } from "@/lib/pricing";
@@ -28,6 +30,7 @@ function bookingBadge(status: string, t: Translator): { label: string; cls: stri
 // Phase 3 dashboard redesign -- "My requests" is no longer a separate
 // header link, everything lives here now.
 export default function DashboardContent({ lang, t }: Props) {
+  const router = useRouter();
   const [tab, setTab] = useState<Tab>("listings");
   const [listings, setListings] = useState<Space[] | null>(null);
   const [myBookings, setMyBookings] = useState<BookingDetail[] | null>(null);
@@ -113,7 +116,7 @@ export default function DashboardContent({ lang, t }: Props) {
               <button
                 className="btn-primary"
                 style={{ marginTop: 12 }}
-                onClick={() => (window.location.href = `/list-space?lang=${lang}`)}
+                onClick={() => router.push(`/list-space?lang=${lang}`)}
               >
                 {t.addListing}
               </button>
@@ -123,7 +126,7 @@ export default function DashboardContent({ lang, t }: Props) {
               const badge = statusBadge(s, t);
               return (
                 <div key={s.id} className="dash-listing-row" style={{ display: "flex" }}>
-                  <a href={`/listing/${s.id}?lang=${lang}`} style={{ display: "flex", flex: 1, minWidth: 0 }}>
+                  <Link href={`/listing/${s.id}?lang=${lang}`} style={{ display: "flex", flex: 1, minWidth: 0 }}>
                     <div className="thumb" />
                     <div className="info">
                       <div className="title">{s.title}</div>
@@ -131,13 +134,13 @@ export default function DashboardContent({ lang, t }: Props) {
                         {s.city} · {formatHeadlinePrice(s, t)}
                       </div>
                     </div>
-                  </a>
+                  </Link>
                   <span className={`status-badge ${badge.cls}`} style={{ marginRight: 12 }}>
                     {badge.label}
                   </span>
-                  <a href={`/manage-listing/${s.id}?lang=${lang}`} className="btn-secondary" style={{ flex: "none" }}>
+                  <Link href={`/manage-listing/${s.id}?lang=${lang}`} className="btn-secondary" style={{ flex: "none" }}>
                     {t.editListing}
-                  </a>
+                  </Link>
                 </div>
               );
             })
@@ -157,7 +160,7 @@ export default function DashboardContent({ lang, t }: Props) {
                 <button
                   className="btn-primary"
                   style={{ marginTop: 12 }}
-                  onClick={() => (window.location.href = `/search?lang=${lang}`)}
+                  onClick={() => router.push(`/search?lang=${lang}`)}
                 >
                   {t.findASpace}
                 </button>
@@ -190,13 +193,13 @@ export default function DashboardContent({ lang, t }: Props) {
                         </button>
                       )}
                       {b.can_review && (
-                        <a
+                        <Link
                           className="btn-review"
                           href={`/listing/${b.space_id}?lang=${lang}&review=${b.id}#review-form`}
                           onClick={(e) => e.stopPropagation()}
                         >
                           ★ {t.leaveReview}
-                        </a>
+                        </Link>
                       )}
                     </div>
                   </div>
@@ -256,7 +259,7 @@ export default function DashboardContent({ lang, t }: Props) {
           ) : (
             saved.map((s) => (
               <div key={s.id} className="dash-listing-row" style={{ display: "flex" }}>
-                <a href={`/listing/${s.id}?lang=${lang}`} style={{ display: "flex", flex: 1, minWidth: 0 }}>
+                <Link href={`/listing/${s.id}?lang=${lang}`} style={{ display: "flex", flex: 1, minWidth: 0 }}>
                   <div className="thumb" />
                   <div className="info">
                     <div className="title">{s.title}</div>
@@ -264,7 +267,7 @@ export default function DashboardContent({ lang, t }: Props) {
                       {s.city} · {formatHeadlinePrice(s, t)}
                     </div>
                   </div>
-                </a>
+                </Link>
                 <button className="btn-secondary" onClick={() => unsave(s.id)}>
                   {t.remove}
                 </button>

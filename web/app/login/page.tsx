@@ -1,3 +1,4 @@
+import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import LoginForm from "@/components/LoginForm";
 import { getPageContext } from "@/lib/session";
@@ -21,7 +22,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
             <div className="auth-switch">
               {lang === "de" ? "Noch kein Konto?" : "Don't have an account?"}{" "}
-              <a href={`/register?lang=${lang}`}>{lang === "de" ? "Registrieren" : "Sign up"}</a>
+              <Link href={`/register?lang=${lang}`}>{lang === "de" ? "Registrieren" : "Sign up"}</Link>
             </div>
           </div>
         </div>

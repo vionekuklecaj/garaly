@@ -34,7 +34,14 @@ export default function MessageHostButton({ spaceId, lang, t, isLoggedIn, loginH
         return;
       }
       const data = await res.json().catch(() => ({}));
-      setError(data.detail || (lang === "de" ? "Etwas ist schiefgelaufen." : "Something went wrong."));
+      // A raw "Not Found" with no other detail is Starlette's generic
+      // unmatched-route 404 (i.e. the backend doesn't have this endpoint
+      // deployed yet), not one of our own app-level 404s (which always
+      // carry a specific detail, e.g. "Space not found") -- showing that
+      // bare phrase to a user reads as confusing/meaningless, so fall
+      // back to the same friendly message as a network failure instead.
+      const detail = res.status === 404 && data.detail === "Not Found" ? null : data.detail;
+      setError(detail || (lang === "de" ? "Etwas ist schiefgelaufen." : "Something went wrong."));
     } catch {
       setError(lang === "de" ? "Etwas ist schiefgelaufen." : "Something went wrong.");
     }

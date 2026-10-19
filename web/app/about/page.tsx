@@ -1,3 +1,4 @@
+import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import { getPageContext } from "@/lib/session";
 import { TEAM } from "@/lib/translations";
@@ -13,7 +14,7 @@ export default async function AboutPage({ searchParams }: { searchParams: Promis
       <main>
         <div className="container" style={{ paddingTop: 24 }}>
           <div className="breadcrumb">
-            <a href={`/?lang=${lang}`}>{t.breadcrumbHome}</a> / {t.aboutTitle}
+            <Link href={`/?lang=${lang}`}>{t.breadcrumbHome}</Link> / {t.aboutTitle}
           </div>
           <h1 className="page-title hfont">{t.aboutTitle}</h1>
           <p style={{ color: "var(--ink-muted)", maxWidth: 640, margin: "-8px 0 40px", lineHeight: 1.6 }}>{t.aboutIntro}</p>

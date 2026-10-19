@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import type { Lang, Translator } from "@/lib/translations";
 import type { AdminSpace } from "@/lib/types";
 import { formatHeadlinePrice } from "@/lib/pricing";
@@ -52,7 +53,7 @@ export default function AdminQueueContent({ lang, t }: Props) {
           <div className="row1">
             <div>
               <div className="title">
-                <a href={`/listing/${s.id}?lang=${lang}`}>{s.title}</a> · {s.city}
+                <Link href={`/listing/${s.id}?lang=${lang}`}>{s.title}</Link> · {s.city}
               </div>
               <div className="meta">
                 {s.owner_name} ({s.owner_email})

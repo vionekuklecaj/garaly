@@ -1,3 +1,4 @@
+import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import BookingForm from "@/components/BookingForm";
 import SaveButton from "@/components/SaveButton";
@@ -62,7 +63,7 @@ export default async function ListingDetailPage({
           ) : (
             <>
               <div className="breadcrumb">
-                <a href={`/?lang=${lang}`}>{t.breadcrumbHome}</a> / <a href={`/search?lang=${lang}`}>{t.breadcrumbFind}</a> /{" "}
+                <Link href={`/?lang=${lang}`}>{t.breadcrumbHome}</Link> / <Link href={`/search?lang=${lang}`}>{t.breadcrumbFind}</Link> /{" "}
                 {space.title}
               </div>
 
@@ -226,13 +227,13 @@ export default async function ListingDetailPage({
                               ? t.rejectedNotice
                               : t.ownListingNotice}
                       </div>
-                      <a
+                      <Link
                         className="btn-primary"
                         style={{ width: "100%", display: "block", textAlign: "center", boxSizing: "border-box" }}
                         href={`/manage-listing/${space.id}?lang=${lang}`}
                       >
                         {t.manageInDashboard}
-                      </a>
+                      </Link>
                     </>
                   ) : (
                     <>

@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import type { Lang, Translator } from "@/lib/translations";
 import type { User } from "@/lib/types";
 import ProfileMenu from "./ProfileMenu";
@@ -12,6 +14,8 @@ type Props = {
 };
 
 export default function Header({ lang, user, t }: Props) {
+  const router = useRouter();
+
   function toggleLang() {
     const next: Lang = lang === "de" ? "en" : "de";
     document.cookie = `garaly_lang=${next};path=/;max-age=31536000`;
@@ -22,16 +26,16 @@ export default function Header({ lang, user, t }: Props) {
 
   return (
     <header className="site-header">
-      <a className="logo" href={`/?lang=${lang}`}>
+      <Link className="logo" href={`/?lang=${lang}`}>
         <img src="/garaly-icon.png" alt="Garaly" />
         <span className="hfont">Garaly</span>
-      </a>
+      </Link>
 
       <nav className="main-nav">
-        <a href={`/search?lang=${lang}`}>{t.navFind}</a>
-        <a href={`/list-space?lang=${lang}`}>{t.navList}</a>
-        <a href={`/?lang=${lang}#how-it-works`}>{t.navHow}</a>
-        <a href={`/about?lang=${lang}`}>{t.navAbout}</a>
+        <Link href={`/search?lang=${lang}`}>{t.navFind}</Link>
+        <Link href={`/list-space?lang=${lang}`}>{t.navList}</Link>
+        <Link href={`/?lang=${lang}#how-it-works`}>{t.navHow}</Link>
+        <Link href={`/about?lang=${lang}`}>{t.navAbout}</Link>
       </nav>
 
       <div className="header-right">
@@ -46,9 +50,9 @@ export default function Header({ lang, user, t }: Props) {
             <ProfileMenu lang={lang} user={user} t={t} />
           </>
         ) : (
-          <a href={`/login?lang=${lang}`}>{t.login}</a>
+          <Link href={`/login?lang=${lang}`}>{t.login}</Link>
         )}
-        <button className="btn-primary" onClick={() => (window.location.href = `/list-space?lang=${lang}`)}>
+        <button className="btn-primary" onClick={() => router.push(`/list-space?lang=${lang}`)}>
           {t.cta}
         </button>
       </div>

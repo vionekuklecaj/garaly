@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import type { Lang, Translator } from "@/lib/translations";
 import type { User } from "@/lib/types";
 
@@ -105,7 +106,7 @@ export default function ProfileMenu({ lang, user, t }: Props) {
 
 function ProfileMenuLink({ href, children }: { href: string; children: React.ReactNode }) {
   return (
-    <a
+    <Link
       href={href}
       style={{
         display: "block",
@@ -115,6 +116,6 @@ function ProfileMenuLink({ href, children }: { href: string; children: React.Rea
       }}
     >
       {children}
-    </a>
+    </Link>
   );
 }

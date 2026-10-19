@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import Link from "next/link";
 import type { Lang, Translator } from "@/lib/translations";
 import type { BookingDetail } from "@/lib/types";
 import MessageRenterButton from "./MessageRenterButton";
@@ -108,9 +109,9 @@ export default function BookingDetailModal({ booking, lang, t, showRenterInfo, o
           <MessageRenterButton spaceId={booking.space_id} renterId={booking.renter_id} lang={lang} t={t} />
         )}
 
-        <a className="btn-secondary" style={{ display: "block", textAlign: "center", marginTop: 16 }} href={`/listing/${booking.space_id}?lang=${lang}`}>
+        <Link className="btn-secondary" style={{ display: "block", textAlign: "center", marginTop: 16 }} href={`/listing/${booking.space_id}?lang=${lang}`}>
           {t.viewFullListing}
-        </a>
+        </Link>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import ListSpaceForm from "@/components/ListSpaceForm";
 import { getPageContext } from "@/lib/session";
@@ -19,9 +20,9 @@ export default async function ListSpacePage({ searchParams }: { searchParams: Pr
             {!user ? (
               <>
                 <div className="form-error visible">{t.loginToList}</div>
-                <a className="btn-primary" style={{ width: "100%", display: "block", textAlign: "center", boxSizing: "border-box" }} href={`/login?lang=${lang}&next=/list-space`}>
+                <Link className="btn-primary" style={{ width: "100%", display: "block", textAlign: "center", boxSizing: "border-box" }} href={`/login?lang=${lang}&next=/list-space`}>
                   {t.login}
-                </a>
+                </Link>
               </>
             ) : (
               <ListSpaceForm lang={lang} t={t} />

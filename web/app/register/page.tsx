@@ -1,3 +1,4 @@
+import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import RegisterForm from "@/components/RegisterForm";
 import { getPageContext } from "@/lib/session";
@@ -19,7 +20,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
             <RegisterForm lang={lang} />
 
             <div className="auth-switch">
-              {lang === "de" ? "Schon ein Konto?" : "Already have an account?"} <a href={`/login?lang=${lang}`}>{t.login}</a>
+              {lang === "de" ? "Schon ein Konto?" : "Already have an account?"} <Link href={`/login?lang=${lang}`}>{t.login}</Link>
             </div>
           </div>
         </div>

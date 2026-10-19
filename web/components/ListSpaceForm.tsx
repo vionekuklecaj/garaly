@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { CATEGORIES, type Lang, type Translator } from "@/lib/translations";
 import type { AmenityKey } from "@/lib/types";
 import { lookupCityForZip } from "@/lib/zipLookup";
@@ -88,9 +89,9 @@ export default function ListSpaceForm({ lang, t }: Props) {
       <div style={{ textAlign: "center", padding: "20px 0" }}>
         <p style={{ color: "var(--green-deep)", fontWeight: 600, marginBottom: 8 }}>{t.listingPublished}</p>
         <p style={{ color: "var(--ink-muted)", fontSize: 14, marginBottom: 16 }}>{t.pendingReviewNotice}</p>
-        <a className="btn-primary" style={{ display: "inline-block" }} href={`/listing/${publishedId}?lang=${lang}`}>
+        <Link className="btn-primary" style={{ display: "inline-block" }} href={`/listing/${publishedId}?lang=${lang}`}>
           {t.viewListing}
-        </a>
+        </Link>
       </div>
     );
   }

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import PageShell from "@/components/PageShell";
 import SearchResults from "@/components/SearchResults";
 import { getPageContext } from "@/lib/session";
@@ -26,7 +27,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       <main>
         <div className="container">
           <div className="breadcrumb">
-            <a href={`/?lang=${lang}`}>{t.breadcrumbHome}</a> / {t.breadcrumbFind}
+            <Link href={`/?lang=${lang}`}>{t.breadcrumbHome}</Link> / {t.breadcrumbFind}
           </div>
           <h1 className="page-title hfont">
             {t.searchTitleFor} {city}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import type { Lang, Translator, CATEGORIES } from "@/lib/translations";
 
 type Props = {
@@ -195,11 +196,11 @@ export default function CategoryCarousel({ lang, categories, t }: Props) {
     <div className="category-carousel-wrap">
       <div className="category-carousel" ref={trackRef}>
         {categories.map((c) => (
-          <a key={c.key} className="category-card" href={`/search?category=${c.key}&lang=${lang}`}>
+          <Link key={c.key} className="category-card" href={`/search?category=${c.key}&lang=${lang}`}>
             <div className="category-icon">{c.icon}</div>
             <div className="name">{c[lang]}</div>
             <div className="desc">{t[c.desc_key as keyof typeof t]}</div>
-          </a>
+          </Link>
         ))}
       </div>
     </div>
