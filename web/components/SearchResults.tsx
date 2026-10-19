@@ -99,7 +99,11 @@ export default function SearchResults({ lang, t, city, activeCategory, moveIn, m
             return (
               <div key={space.id} className="listing-card" onClick={() => router.push(listingHref(space))}>
                 <div className="photo-wrap">
-                  <div className="photo">{space.category.toUpperCase()} PHOTO</div>
+                  {space.images && space.images.length > 0 ? (
+                    <div className="photo" style={{ background: `url(${space.images[0].url}) center/cover` }} />
+                  ) : (
+                    <div className="photo">{space.category.toUpperCase()} PHOTO</div>
+                  )}
                   <div className="badge-category">{catLabel(space.category)}</div>
                   <div className="badge-save" onClick={(e) => e.stopPropagation()}>
                     ♡

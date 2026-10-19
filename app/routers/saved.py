@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_user
 from app.database import get_db
+from app.listing_covers import images_by_space
 from app.models import SavedListing, Space, User
 from app.schemas import SpaceOut
 
@@ -18,7 +19,14 @@ async def list_saved(user: User = Depends(get_current_user), db: AsyncSession = 
         .where(SavedListing.user_id == user.id)
         .order_by(SavedListing.created_at.desc())
     )
-    return result.scalars().all()
+    rows = result.scalars().all()
+    images = await images_by_space(db, [r.id for r in rows])
+    items = []
+    for r in rows:
+        out = SpaceOut.model_validate(r)
+        out.images = images.get(r.id, [])
+        items.append(out)
+    return items
 
 
 @router.post("/api/spaces/{space_id}/save", status_code=status.HTTP_204_NO_CONTENT)

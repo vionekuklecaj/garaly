@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 from app.auth import get_current_user, get_current_user_optional
 from app.availability import BLOCKING_STATUSES, has_conflicting_booking
 from app.database import get_db
+from app.listing_covers import images_by_space
 from app.models import Booking, Review, Space, User
 from app.pricing import price_for_period
 from app.schemas import (
@@ -86,9 +87,9 @@ async def list_spaces(
     # the main query, which would need Space columns in a GROUP BY) --
     # still a single round trip regardless of how many spaces are on the
     # page, unlike calling _review_stats per row.
+    space_ids = [r.id for r in rows]
     stats_by_space: dict[str, tuple[float | None, int]] = {}
-    if rows:
-        space_ids = [r.id for r in rows]
+    if space_ids:
         stats_result = await db.execute(
             select(Review.space_id, func.avg(Review.rating), func.count(Review.id))
             .where(Review.space_id.in_(space_ids))
@@ -97,12 +98,19 @@ async def list_spaces(
         for space_id, avg, count in stats_result.all():
             stats_by_space[space_id] = (round(float(avg), 1), count)
 
+    # Same batched-per-page approach for cover photos -- search/dashboard
+    # cards used to always show the category placeholder regardless of
+    # whether the host had uploaded real photos, since list/search results
+    # never carried images at all before this.
+    images = await images_by_space(db, space_ids)
+
     items = []
     for r in rows:
         out = SpaceOut.model_validate(r)
         avg, count = stats_by_space.get(r.id, (None, 0))
         out.review_average = avg
         out.review_count = count
+        out.images = images.get(r.id, [])
         items.append(out)
 
     return {
@@ -133,7 +141,14 @@ async def my_spaces(user: User = Depends(get_current_user), db: AsyncSession = D
     result = await db.execute(
         select(Space).where(Space.owner_id == user.id).order_by(Space.created_at.desc())
     )
-    return result.scalars().all()
+    rows = result.scalars().all()
+    images = await images_by_space(db, [r.id for r in rows])
+    items = []
+    for r in rows:
+        out = SpaceOut.model_validate(r)
+        out.images = images.get(r.id, [])
+        items.append(out)
+    return items
 
 
 @router.get("/{space_id}", response_model=SpaceOut)

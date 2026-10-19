@@ -127,7 +127,7 @@ export default function DashboardContent({ lang, t }: Props) {
               return (
                 <div key={s.id} className="dash-listing-row" style={{ display: "flex" }}>
                   <Link href={`/listing/${s.id}?lang=${lang}`} style={{ display: "flex", flex: 1, minWidth: 0 }}>
-                    <div className="thumb" />
+                    <div className="thumb" style={s.images?.[0] ? { background: `url(${s.images[0].url}) center/cover` } : undefined} />
                     <div className="info">
                       <div className="title">{s.title}</div>
                       <div className="meta">
@@ -260,7 +260,7 @@ export default function DashboardContent({ lang, t }: Props) {
             saved.map((s) => (
               <div key={s.id} className="dash-listing-row" style={{ display: "flex" }}>
                 <Link href={`/listing/${s.id}?lang=${lang}`} style={{ display: "flex", flex: 1, minWidth: 0 }}>
-                  <div className="thumb" />
+                  <div className="thumb" style={s.images?.[0] ? { background: `url(${s.images[0].url}) center/cover` } : undefined} />
                   <div className="info">
                     <div className="title">{s.title}</div>
                     <div className="meta">

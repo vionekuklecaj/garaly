@@ -4,6 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth import get_current_admin
 from app.database import get_db
+from app.listing_covers import images_by_space
 from app.models import Space, User
 from app.schemas import AdminSpaceOut, ModerationDecision
 
@@ -24,11 +25,14 @@ async def list_spaces_for_review(
         .where(Space.status == status_filter)
         .order_by(Space.created_at.asc())
     )
+    rows = result.all()
+    images = await images_by_space(db, [space.id for space, _ in rows])
     out = []
-    for space, owner in result.all():
+    for space, owner in rows:
         item = AdminSpaceOut.model_validate(space)
         item.owner_name = owner.name
         item.owner_email = owner.email
+        item.images = images.get(space.id, [])
         out.append(item)
     return out
 
